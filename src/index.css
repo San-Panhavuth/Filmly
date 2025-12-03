@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --primary-green: #00441B;
+  --primary-green-light: #0A5B28;
+  --accent-green: #26A65B;
+  --white: #FFFFFF;
+  --black: #000000;
+  --gray-100: #F5F5F5;
+  --gray-200: #EDEDED;
+  --gray-300: #D6D6D6;
+  --error: #D61313;
+}
+
+html, body {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  color: var(--black);
+  background:#F5F5F5;
+}
+
+/* Buttons */
+.button-primary,
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  line-height: 1;
+  border: 1px solid var(--primary-green);
+  transition: background .15s, color .15s, border-color .15s;
+  text-decoration: none;
+}
+
+.button-primary {
+  background: var(--primary-green);
+  color: var(--white);
+}
+.button-primary:hover {
+  background: var(--primary-green-light);
+}
+
+.button-secondary {
+  background: var(--white);
+  color: var(--primary-green);
+}
+.button-secondary:hover {
+  background: var(--primary-green);
+  color: var(--white);
+}
+
+/* Inputs */
+input, select, textarea { border: 1px solid var(--gray-300); border-radius: 8px; padding: 8px 10px; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-green); border-color: var(--accent-green); }
+
+/* Cards */
+.card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 16px; }
+
+.hero-card {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  background: var(--gray-100);
+}
+
+/* Tables */
+table tr:hover { background: var(--gray-100); }
+
+/* Status badges */
+.badge { border-radius: 9999px; padding: 2px 8px; font-weight: 600; }
+.badge.submitted { background: var(--gray-200); color: var(--black); }
+.badge.review { background: #1E3A8A; color: var(--white); }
+.badge.shortlisted { background: #F59E0B; color: var(--black); }
+.badge.accepted { background: var(--accent-green); color: var(--white); }
+.badge.rejected { background: var(--error); color: var(--white); }
