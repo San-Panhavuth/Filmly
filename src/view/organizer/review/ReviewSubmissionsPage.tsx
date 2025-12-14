@@ -5,24 +5,30 @@ import { FiFilm, FiAward, FiX } from 'react-icons/fi';
 import { getMyEvents, getEventSubmissions, updateSubmissionStatus, assignWinner } from '@/api/organizerApi';
 
 const statusColors = {
-  'submitted': 'bg-gray-500 text-white',
   'under_review': 'bg-blue-500 text-white',
-  'reviewed': 'bg-green-500 text-white',
+  'shortlist': 'bg-yellow-500 text-white',
+  'accept': 'bg-green-500 text-white',
+  'reject': 'bg-red-500 text-white',
+  'nominee': 'bg-purple-500 text-white',
 };
 
 const statusOptions = [
   'All Status',
-  'submitted',
   'under_review',
-  'reviewed',
+  'shortlist',
+  'accept',
+  'reject',
+  'nominee',
 ];
 
 const PAGE_SIZE = 10;
 
 const statusButtons = [
-  { label: 'submitted', value: 'submitted', color: 'bg-gray-500 text-white' },
   { label: 'under_review', value: 'under_review', color: 'bg-blue-500 text-white' },
-  { label: 'reviewed', value: 'reviewed', color: 'bg-green-500 text-white' },
+  { label: 'shortlist', value: 'shortlist', color: 'bg-yellow-500 text-white' },
+  { label: 'accept', value: 'accept', color: 'bg-green-500 text-white' },
+  { label: 'reject', value: 'reject', color: 'bg-red-500 text-white' },
+  { label: 'nominee', value: 'nominee', color: 'bg-purple-500 text-white' },
 ];
 
 const mainAwards = [

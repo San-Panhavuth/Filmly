@@ -18,6 +18,10 @@ export default function FestivalDetailCard({ festival, onClose, onDelete }: Fest
     duration: festival.duration ? `${festival.duration} minutes` : 'Not specified',
     deadline: festival.deadline ? new Date(festival.deadline).toLocaleDateString() : 'No deadline set',
     genres: festival.genre || [],
+    website: festival.website || null,
+    contactEmail: festival.contactEmail || null,
+    country: festival.country || null,
+    languages: festival.languages || null,
     stats: {
       submissions: 0, // Would need to fetch from submissions API
       filmmakers: 0,

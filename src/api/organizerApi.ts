@@ -22,11 +22,18 @@ export async function createEvent(eventData: {
 }, accessToken?: string) {
   const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);
 
+  console.log('[createEvent] API_URL:', API_URL);
+  console.log('[createEvent] Token available:', !!token);
+  console.log('[createEvent] Event data:', eventData);
+
   if (!token) {
     throw new Error('No access token available');
   }
 
-  const res = await fetch(`${API_URL}/api/events`, {
+  const url = `${API_URL}/api/events`;
+  console.log('[createEvent] Fetching:', url);
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +42,10 @@ export async function createEvent(eventData: {
     body: JSON.stringify(eventData),
   });
 
+  console.log('[createEvent] Response status:', res.status);
   const data = await res.json();
+  console.log('[createEvent] Response data:', data);
+  
   if (!res.ok) throw new Error(data.error || data.message || 'Failed to create event');
   return data;
 }
@@ -325,6 +335,11 @@ export async function deleteWinner(eventId: number, winnerId: number, accessToke
 export async function uploadEventImage(eventId: number, imageFile: File, accessToken?: string) {
   const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);
 
+  console.log('[uploadEventImage] API_URL:', API_URL);
+  console.log('[uploadEventImage] Event ID:', eventId);
+  console.log('[uploadEventImage] Image file:', imageFile.name, imageFile.size, 'bytes');
+  console.log('[uploadEventImage] Token available:', !!token);
+
   if (!token) {
     throw new Error('No access token available');
   }
@@ -332,7 +347,10 @@ export async function uploadEventImage(eventId: number, imageFile: File, accessT
   const formData = new FormData();
   formData.append('image', imageFile);
 
-  const res = await fetch(`${API_URL}/api/events/${eventId}/images`, {
+  const url = `${API_URL}/api/events/${eventId}/images`;
+  console.log('[uploadEventImage] Fetching:', url);
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -340,7 +358,10 @@ export async function uploadEventImage(eventId: number, imageFile: File, accessT
     body: formData,
   });
 
+  console.log('[uploadEventImage] Response status:', res.status);
   const data = await res.json();
+  console.log('[uploadEventImage] Response data:', data);
+  
   if (!res.ok) throw new Error(data.error || data.message || 'Failed to upload image');
   return data;
 }

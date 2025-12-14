@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import FestivalDetailCard from './FestivalDetailCard';
-import { getMyEvents, deleteEvent } from '@/api/organizerApi';
+import { getMyEvents, deleteEvent, getEventImages } from '@/api/organizerApi';
 import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 10;
@@ -15,6 +15,7 @@ export default function MyFestivalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [totalCount, setTotalCount] = useState(0);
+  const [eventImages, setEventImages] = useState<Record<number, string>>({});
 
   useEffect(() => {
     fetchFestivals();
@@ -25,8 +26,26 @@ export default function MyFestivalPage() {
       setLoading(true);
       const offset = (page - 1) * PAGE_SIZE;
       const response = await getMyEvents(undefined, PAGE_SIZE, offset);
-      setFestivals(response.events || []);
+      const events = response.events || [];
+      setFestivals(events);
       setTotalCount(response.count || 0);
+
+      // Fetch images for each event
+      const imageMap: Record<number, string> = {};
+      await Promise.all(
+        events.map(async (event: any) => {
+          try {
+            const imagesResponse = await getEventImages(event.id);
+            if (imagesResponse.images && imagesResponse.images.length > 0) {
+              // Use the first image as the thumbnail
+              imageMap[event.id] = imagesResponse.images[0].imageLink;
+            }
+          } catch (imgErr) {
+            console.error(`Failed to fetch images for event ${event.id}:`, imgErr);
+          }
+        })
+      );
+      setEventImages(imageMap);
     } catch (err: any) {
       console.error('Error fetching festivals:', err);
       setError(err.message || 'Failed to load festivals');
@@ -97,9 +116,9 @@ export default function MyFestivalPage() {
           value={selected}
           onChange={e => setSelected(e.target.value)}
         >
-          <option>All Festivals</option>
+          <option value="all">All Festivals</option>
           {festivals.map(f => (
-            <option key={f.name}>{f.name}</option>
+            <option key={f.id} value={f.id}>{f.title}</option>
           ))}
         </select>
       </div>
@@ -114,8 +133,16 @@ export default function MyFestivalPage() {
                 className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col aspect-square overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => setSelectedFestival(fest)}
               >
-                <div className="bg-gray-100 flex items-center justify-center w-full h-1/2 min-h-[80px]">
-                  <span className="text-2xl text-gray-400">🎬</span>
+                <div className="bg-gray-100 flex items-center justify-center w-full h-1/2 min-h-[80px] overflow-hidden">
+                  {eventImages[fest.id] ? (
+                    <img 
+                      src={eventImages[fest.id]} 
+                      alt={fest.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl text-gray-400">🎬</span>
+                  )}
                 </div>
                 <div className="px-4 py-3 flex-1 flex flex-col justify-end">
                   <div className="font-medium text-gray-900 mb-1 truncate" title={fest.title}>
@@ -138,9 +165,10 @@ export default function MyFestivalPage() {
               Create Your First Festival
             </button>
           </div>
-        )}</div>
-        {/* Pagination Footer */}
-        {festivals.length > 0 && totalPages > 1 && (
+        )}
+      </div>
+      {/* Pagination Footer */}
+      {festivals.length > 0 && totalPages > 1 && (
           <div className="flex justify-center mt-8 gap-2 items-center">
             <button
               className={`px-4 py-2 rounded-lg border font-semibold transition ${page === 1 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-green-900 border-gray-300 hover:bg-green-50'}`}
@@ -161,7 +189,6 @@ export default function MyFestivalPage() {
             </button>
           </div>
         )}
-      </div>
     </div>
   );
 }
