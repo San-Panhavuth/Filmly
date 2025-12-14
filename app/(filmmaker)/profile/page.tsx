@@ -1,7 +1,5 @@
 'use client';
 
-import FilmmakerProfileView from '@/view/films/profile/FilmmakerProfileView';
-
 import React, { useEffect, useState } from 'react';
 import FilmmakerProfileView from '@/view/films/profile/FilmmakerProfileView';
 import { getCurrentUser } from '@/api/authApi';

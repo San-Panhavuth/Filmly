@@ -1,0 +1,1252 @@
+# Filmly Backend API - Quick Reference
+
+**Base URL:** `https://filmly-backend.vercel.app`
+
+**Auth Header:** `Authorization: Bearer <access_token>`
+
+
+Role-Based Limits Enforced:
+
+Free Plan (default):
+
+2 film submissions per month
+Cannot create events
+Cannot post comments
+Can view submissions and receive comments
+Premium Plan ($10/month):
+
+8 film submissions per month
+5 events per month
+Can post comments on submissions to their events
+---
+
+## Enums
+
+### User Roles
+- `Free` - Basic user
+- `Premium` - Paid subscription
+
+### Genres
+`Comedy`, `Romance`, `Drama`, `Educational`, `Documentary`, `War`, `Fantasy`, `Action`, `Traditional`, `Western`, `Horror`, `Animation`, `Thriller`, `Adventure`, `Science Fiction`, `Musical`, `Cinematography`, `Screenplay`, `Youth Film`, `Audience Choice`
+
+### Languages
+`English`, `Khmer`, `Chinese`, `No Restriction`
+
+### Submission Status
+`submitted`, `under_review`, `reviewed`
+
+### Categories (for Winners)
+`1st`, `2nd`, `3rd`, `Comedy`, `Romance`, `Drama`, `Educational`, `Documentary`, `War`, `Fantasy`, `Action`, `Traditional`, `Western`, `Horror`, `Animation`, `Thriller`, `Adventure`, `Science Fiction`, `Musical`, `Cinematography`, `Screenplay`, `Youth Film`, `Audience Choice`, `Actor`, `Actress`, `Director`
+
+### Crew Roles
+`Producer`, `Screenwriter`, `Actor`, `Actress`, `Supporting Actor`, `Supporting Actress`, `Director of Photography`, `Editor`, `Music Director`, `Sound Designer`, `Production Designer`, `Costume Designer`, `Visual Effects (VFX) Supervisor`, `Stunt Coordinator`, `Assistant Director (AD)`, `Script Supervisor`, `Lighting Technician`, `Camera Operator`, `Production Assistant (PA)`, `Casting`, `Director`, `Set Designer`, `Choreographer`, `Narrator`
+
+---
+
+## Authentication
+
+### Sign Up
+`POST /api/auth/signup`
+- **Input:**
+```json
+{
+  "email": "johndoe@example.com",
+  "password": "SecurePass123!",
+  "username": "johndoe"
+}
+```
+- **Output:**
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "johndoe@example.com"
+  },
+  "session": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "v1.MjA2NDA3Mjg2OQ.rT8AZLx..."
+  }
+}
+```
+
+### Login
+`POST /api/auth/login`
+- **Input:**
+```json
+{
+  "email": "johndoe@example.com",
+  "password": "SecurePass123!"
+}
+```
+- **Output:**
+
+```json
+{
+  "profile": {
+    "id": 1,
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "johndoe",
+    "email": "johndoe@example.com",
+    "description": "Independent filmmaker and storyteller",
+    "role": "Premium"
+  }
+}
+```
+
+### Update Profile (Full)
+`PUT /api/user-profile` 🔒
+- **Input:**
+```json
+{
+  "username": "johndoe_films",
+  "email": "john.new@example.com",
+  "description": "Award-winning filmmaker"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Profile updated successfully",
+  "profile": {
+    "id": 1,
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "johndoe_films",
+    "email": "john.new@example.com",
+    "description": "Award-winning filmmaker",
+    "role": "Premium"
+  }
+}
+```
+
+### Update Profile (Partial)
+`PATCH /api/user-profile` 🔒
+- **Input:**
+```json
+{
+  "description": "Award-winning filmmaker and director"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Profile updated successfully",
+  "profile": {
+    "id": 1,
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "johndoe",
+    "email": "johndoe@example.com",
+    "description": "Award-winning filmmaker and director",
+    "role": "Premium"
+  }
+}
+```
+
+### Get Usage Statistics
+`GET /api/user-profile/usage` 🔒
+- **Output:**
+```json
+{
+  "role": "Free",
+  "submissions": {
+    "used": 1,
+    "limit": 2,
+    "remaining": 1,
+    "description": "Free users can submit up to 2 films per month"
+  },
+  "events": {
+    "used": 0,
+    "limit": 0,
+    "remaining": 0,
+    "description": "Free users cannot create events. Upgrade to Premium to host events."
+  },
+  "lastResetDate": "2025-12-01T00:00:00Z",
+  "nextResetDate": "2026-01-01T00:00:00Z"
+}
+```
+- **Note:** Premium users have limits of 8 submissions and 5 events per month
+
+### Logout
+`POST /api/auth/logout`
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+### Get Current User
+`GET /api/auth/currentUser` 🔒
+- **Input:** None
+- **Output:**
+```json
+{
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "johndoe@example.com",
+    "name": "John Doe",
+    "email_verified": true,
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-06-20T14:45:00Z"
+  }
+}
+```
+
+### Forget Password
+`POST /api/auth/forgetPassword`
+- **Input:**
+```json
+{
+  "email": "johndoe@example.com"
+}
+```
+- **Output:**
+```jInput:** None
+- **Output:**
+```json
+{
+  "films": [
+    {
+      "id": 1,
+      "title": "The Silent Echo",
+      "genre": ["Drama", "Thriller"],
+      "language": "English",
+      "description": "A gripping psychological thriller about memory and identity",
+      "duration": 120,
+      "s3Link": "https://storage.supabase.com/films/video_123.mp4",
+      "subtitleFile": "https://storage.supabase.com/subtitles/sub_123.srt",
+      "uid": 1,
+      "createdAt": "2024-03-15T08:30:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Create Film
+`POST /api/films` 🔒 (multipart/form-data)
+- **Input (FormData):**
+  - `title`: "The Silent Echo"
+  - `genre`: `["Drama", "Thriller"]` (as JSON string)
+  - `language`: "English"
+  - `description`: "A gripping psychological thriller"
+  - `duration`: "120"
+  - `videoFile`: File object
+  - `subtitleFile`: File object (.srt, .vtt)
+- **Output:**
+```json
+{
+  "message": "Film created successfully",
+  "film": {
+    "id": 1,
+    "title": "The Silent Echo",
+    "genre": ["Drama", "Thriller"],
+    "language": "English",
+    "description": "A gripping psychological thriller",
+    "duration": 120,
+    "s3Link": "https://storage.supabase.com/films/video_123.mp4",
+    "subtitleFile": "https://storage.supabase.com/subtitles/sub_123.srt",
+    "uid": 1
+  }
+}
+```
+
+### Get Film by ID
+`GET /api/films/[id]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "film": {
+    "id": 1,
+    "title": "The Silent Echo",
+    "genre": ["Drama", "Thriller"],
+    "language": "English",
+    "description": "A gripping psychological thriller about memory and identity",
+    "duration": 120,
+    "s3Link": "https://storage.supabase.com/films/video_123.mp4",
+    "subtitleFile": "https://storage.supabase.com/subtitles/sub_123.srt"
+  }
+}
+```
+
+### Update Film (Full)
+`PUT /api/films/[id]` 🔒 (owner only, multipart/form-data)
+- **Input (FormData):**
+  - `title`: "The Silent Echo: Director's Cut"
+  - `genre`: `["Drama", "Thriller", "Mystery"]`
+  - `language`: "English"
+  - `description`: "Updated description"
+  - `duration`: "135"
+  - `videoFile`: New file (optional)
+  - `subtitleFile`: New file (optional)
+  - `removeVideo`: "true" (optional)
+  - `removeSubtitle`: "true" (optional)
+- **Output:**
+```json
+{
+  "message": "Film updated successfully",
+  "film": {
+    "id": 1,
+    "title": "The Silent Echo: Director's Cut",
+    "genre": ["Drama", "Thriller", "Mystery"],
+    Input:** None
+- **Output:**
+```json
+{
+  "crew": [
+    {
+      "id": 1,
+      "filmId": 1,
+      "crewName": "Sarah Johnson",
+      "crewRole": "Director"
+    },
+    {
+      "id": 2,
+      "filmId": 1,
+      "crewName": "Michael Chen",
+      "crewRole": "Director of Photography"
+    }
+  ],
+  "count": 2
+}
+```
+
+### Add Crew Member
+`POST /api/films/[id]/crew` 🔒 (owner only)
+- **Input:**
+```json
+{Input:** None
+- **Output:**
+```json
+{
+  "documents": [
+    {
+      "id": 1,
+      "filmId": 1,
+      "documentLink": "https://storage.supabase.com/documents/script_final.pdf"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Upload Document
+`POST /api/films/[id]/documents` 🔒 (owner only, multipart/form-data)
+- **Input (FormData):**
+  - `document`: File object (PDF, DOC, DOCX, TXT - max 20MB)
+- **Output:**
+```json
+{
+  "message": "Document uploaded successfully",
+  "document": {
+    "id": 1,
+    "filmId": 1,
+    "documentLink": "https://storage.supabase.com/documents/script_final.pdf"
+  }
+}
+```
+
+### Get Document
+`GET /api/films/[id]/documents/[documentId]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "document": {
+    "id": 1,
+    "filmId": 1,
+    "documentLink": "https://storage.supabase.com/documents/script_final.pdf"
+  }
+}
+```
+
+### Update Document
+`PUT /api/films/[id]/documents/[documentId]` 🔒 (owner only, multipart/form-data)
+- **Input (FormData):**
+  - `document`: New file object
+- **Output:**
+```json
+{
+  "message": "Document updated successfully",
+  "document": {
+    "id": 1,
+    "filmId": 1,
+    "documentLink": "https://storage.supabase.com/documents/script_revised.pdf"
+  }
+}
+```
+
+### Delete Document
+`DELETE /api/films/[id]/documents/[documentId]` 🔒 (owner only)
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Document deleted successfully"
+}
+``
+`GET /api/films/[id]/crew/[crewId]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "crew": {
+    "id": 1,
+    "filmId": 1,
+    "crewName": "Sarah Johnson",
+    "crewRole": "Director"
+  }
+}
+```
+
+### Update Crew Member
+`PUT /api/films/[id]/crew/[crewId]` 🔒 (owner only)
+- **Input:**
+```json
+{
+  "crewName": "Sarah Johnson-Smith",
+  "crewRole": "Director"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Crew member updated successfully",
+  "crew": {
+    "id": 1,
+    "filmId": 1,
+    "crewName": "Sarah Johnson-Smith",
+    "crewRole": "Director"
+  }
+}
+```
+
+### Delete Crew Member
+`DELETE /api/films/[id]/crew/[crewId]` 🔒 (owner only)
+- **Input:** None
+- **Output:**
+```json
+{ (number), `offset` (number)
+- **Input:** None
+- **Output:**
+```json
+{
+  "events": [
+    {
+      "id": 1,
+      "title": "Sundance Film Festival 2025",
+      "genre": ["Drama", "Documentary"],
+      "description": "Premier independent film festival",
+      "duration": 180,
+      "location": "Park City, Utah",
+      "language": "English",
+      "deadline": "2025-11-30T23:59:59Z",
+      "previousDeadline": "2025-11-15T23:59:59Z",
+      "uid": 2,
+      "createdAt": "2024-06-01T10:00:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### Create Event
+`POST /api/events` 🔒 (Premium only)
+- **Input:**
+```json
+{
+  "title": "Indie Film Awards 2025",
+  "genre": ["Drama", "Comedy"],
+  "language": "English",
+  "dInput:** None
+- **Output:**
+```json
+{
+  "images": [
+    {
+      "id": 1,
+      "eid": 1,
+      "imageLink": "https://storage.supabase.com/event-images/sundance_banner.jpg"
+    },
+    {
+      "id": 2,
+      "eid": 1,
+      "imageLink": "https://storage.supabase.com/event-images/venue_photo.jpg"
+    }
+  ],
+  "count": 2
+}
+```
+
+### Upload Image
+`POSInput:** None
+- **Output (for event owner):**
+```json
+{
+  "event": {
+    "id": 1,
+    "title": "Sundance Film Festival 2025",
+    "description": "Premier independent film festival"
+  },
+  "sInput:** None
+- **Output:**
+```json
+{
+  "winners": [
+    {
+      "id": 1,
+      "category": "1st",
+      "eventFilmSubmissionId": 5,
+      "filmCrewId": 12,
+      "filmId": 3,
+      "filmTitle": "Midnight Dreams",
+      "filmGenre": ["Drama"],
+      "crewName": "Sarah Johnson",
+      "crewRole": "Director"
+    },
+    {
+      "id": 2,
+      "category": "Best Director",
+      "eventFilmSubmissionId": 5,
+      "filmCrewId": 12,
+      "filmId": 3,
+      "filmTitle": "Midnight Dreams",
+      "filmGenre": ["Drama"],
+      "crewName": "Sarah Johnson",
+      "crewRole": "Director"
+    }
+  ],
+  "count": 2
+}
+```
+
+### Add Winner
+`POST /api/events/[id]/winners` 🔒 (owner only)
+- **Input:**
+```json
+{
+  "eventFilmSubmissionId": 5,
+  "category": "Best Film",
+  "filmCrewId": 12
+}
+```
+- **Output:**
+```json
+{
+  "message": "Winner added successfully",
+  "winner": {
+    "id": 3,
+    "eventFilmSubmissionId": 5,
+    "category": "Best Film",
+    "filmCrewId": 12
+  }
+}
+```
+
+### Get Winner
+`GET /api/events/[id]/winners/[winnerId]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "id": 1,
+  "category": "1st",
+  "filmId": 3,
+  "filmTitle": "Midnight Dreams",
+  "filmGenre": ["Drama"],
+  "filmLanguage": "English",
+  "filmDescription": "A story about dreams and reality",
+  "crewName": "Sarah Johnson",
+  "crewRole": "Director",
+  "eventId": 1,
+  "eventTitle": "Sundance Film Festival 2025"
+}
+```
+
+### Update Winner
+`PATCH /api/events/[id]/winners/[winnerId]` 🔒 (owner only)
+- **Input:**
+```json
+{
+  "category": "Best Drama",
+  "filmCrewId": 15
+}
+```
+- **Output:**
+```json
+{
+  "message": "Winner updated successfully",
+  "winner": {
+    "id": 1,
+    "category": "Best Drama",
+    "filmCrewId": 15
+  }
+}
+```
+
+### Delete Winner
+`DELInput:** None
+- **Output:**
+```json
+{
+  "myFilmSubmissions": [
+    {
+      "id": 1,
+      "eventId": 1,
+      "filmId": 3,
+      "submissionStatus": "under_review",
+      "eventTitle": "Sundance Film Festival 2025",
+      "eventDeadline": "2025-11-30T23:59:59Z",
+      "filmTitle": "Midnight Dreams",
+      "filmGenre": ["Drama"]
+    }
+  ],
+  "myEventSubmissions": [
+    {
+      "id": 8,
+      "eventId": 4,
+      "filmId": 15,
+      "submissionStatus": "submitted",
+      "eventTitle": "My Film Festival",
+      "filmTitle": "Another Filmmaker's Work"
+    }
+  ],
+  "tInput:** None
+- **Output:**
+```json
+{
+  "submissionId": 1,
+  "comments": [
+    {
+      "id": 1,
+      "comment": "Great cinematography! We'd love to feature this.",
+      "createdAt": "2024-10-15T14:30:00Z",
+      "commenter": {
+        "id": 2,
+        "username": "festival_organizer",
+        "email": "organizer@sundance.org"
+      }
+    },
+    {
+      "id": 2,
+      "comment": "Please provide additional materials for review.",
+      "createdAt": "2024-10-20T09:15:00Z",
+      "commenter": {
+        "id": 2,
+        "username": "festival_organizer",
+        "email": "organizer@sundance.org"
+      }
+    }
+  ],
+  "totalComments": 2,
+  "userRole": "film_owner"
+}
+```
+
+### Add Comment
+`POST /api/submissions/[id]/comments` 🔒 (Premium event owner only)
+- **Input:**
+```json
+{
+  "comment": "Congratulations! Your film has been selected for the final round."
+}
+```
+- **Output:**
+```json
+{
+  "message": "Comment added successfully",
+  "comment": {
+    "id": 3,
+    "comment": "Congratulations! Your film has been selected for the final round.",
+    "createdAt": "2024-11-01T16:45:00Z",
+    "commenter": {
+      "id": 2,
+      "username": "festival_organizer",
+      "email": "organizer@sundance.org"
+    }
+  }
+}
+```
+- **Note:** Only Premium users who are event owners can post comments
+
+### Update Comment
+`PATCH /api/submissions/[id]/comments/[commentId]` 🔒 (Premium owner who created it)
+- **Input:**
+```json
+{
+  "comment": "Congratulations! Your film has been selected as a finalist."
+}
+```
+- **Output:**
+```json
+{
+  "message": "Comment updated successfully",
+  "comment": {
+    "id": 3,
+    "comment": "Congratulations! Your film has been selected as a finalist.",
+    "createdAt": "2024-11-01T16:45:00Z",
+    "commenter": {
+      "id": 2,
+      "username": "festival_organizer",
+      "email": "organizer@sundance.org"
+    }
+  }
+}
+```
+
+### Delete Comment
+`DELETE /api/submissions/[id]/comments/[commentId]` 🔒 (Premium owner who created it)
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Comment deleted successfully"
+}
+``
+{
+  "message": "Film submitted successfully",
+  "submission": {
+    "id": 9,
+    "eventId": 1,
+    "filmId": 3,
+    "submissionStatus": "submitted"
+  }
+}
+```
+
+### Get Submission
+`GET /api/submissions/[id]` 🔒 (film or event owner)
+- **Input:** None
+- **Output:**
+```json
+{
+  "submission": {
+    "id": 1,
+    "eventId": 1,
+    "filmId": 3,
+    "submissionStatus": "under_review",
+    "event": {
+      "id": 1,
+      "title": "Sundance Film Festival 2025",
+      "genre": ["Drama", "Documentary"],
+      "description": "Premier independent film festival",
+      "deadline": "2025-11-30T23:59:59Z",
+      "location": "Park City, Utah",
+      "language": "English",
+      "ownerId": 2
+    },
+    "film": {
+      "id": 3,
+      "title": "Midnight Dreams",
+      "genre": ["Drama"],
+      "language": "English",
+      "description": "A story about dreams",
+      "duration": 95,
+      "ownerId": 5
+    }
+  }
+}
+```
+
+### Update Submission Status
+`PATCH /api/submissions/[id]` 🔒 (Premium event owner only)
+- **Input:**
+```json
+{
+  "submissionStatus": "reviewed"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Submission status updated successfully",
+  "submission": {
+    "id": 1,
+    "submissionStatus": "reviewed"
+  }
+}
+```
+
+### Delete Submission
+`DELETE /api/submissions/[id]` 🔒 (film owner only)
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Submission deleted successfully"
+}
+``
+    "title": "Sundance Film Festival 2025"
+  },
+  "submissions": [
+    {
+      "id": 1,
+      "filmTitle": "Midnight Dreams",
+      "filmGenre": ["Drama"],
+      "submissionStatus": "submitted"
+    }
+  ],
+  "count": 1,
+  "isEventOwner": false
+}
+```
+  - `image`: File object (JPEG, PNG, GIF, WebP - max 10MB)
+- **Output:**
+```json
+{
+  "message": "Image uploaded successfully",
+  "image": {
+    "id": 3,
+    "eid": 1,
+    "imageLink": "https://storage.supabase.com/event-images/poster_2025.jpg"
+  }
+}
+```
+
+### Get Image
+`GET /api/events/[id]/images/[imageId]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "image": {
+    "id": 1,
+    "eid": 1,
+    "imageLink": "https://storage.supabase.com/event-images/sundance_banner.jpg"
+  }
+}
+```
+
+### Delete Image
+`DELETE /api/events/[id]/images/[imageId]` 🔒 (Premium owner only)
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Image deleted successfully"
+}
+``wards 2025",
+    "genre": ["Drama", "Comedy"],
+    "language": "English",
+    "deadline": "2025-12-31T23:59:59Z",
+    "description": "Annual awards for independent filmmakers",
+    "location": "Los Angeles, CA",
+    "uid": 2
+  }
+}
+```
+
+### Get Event by ID
+`GET /api/events/[id]`
+- **Input:** None
+- **Output:**
+```json
+{
+  "event": {
+    "id": 1,
+    "title": "Sundance Film Festival 2025",
+    "genre": ["Drama", "Documentary"],
+    "description": "Premier independent film festival",
+    "duration": 180,
+    "location": "Park City, Utah",
+    "language": "English",
+    "deadline": "2025-11-30T23:59:59Z",
+    "uid": 2
+  }
+}
+```
+
+### Update Event (Full)
+`PUT /api/events/[id]` 🔒 (Premium owner only)
+- **Input:**
+```json
+{
+  "title": "Sundance Film Festival 2025 - Extended",
+  "genre": ["Drama", "Documentary", "Animation"],
+  "language": "No Restriction",
+  "deadline": "2025-12-15T23:59:59Z",
+  "description": "Premier independent film festival - now accepting more genres",
+  "duration": 180,
+  "location": "Park City, Utah",
+  "previousDeadline": "2025-11-30T23:59:59Z"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Event updated successfully",
+  "event": {
+    "id": 1,
+    "title": "Sundance Film Festival 2025 - Extended",
+    "genre": ["Drama", "Documentary", "Animation"],
+    "deadline": "2025-12-15T23:59:59Z"
+  }
+}
+```
+
+### Update Event (Partial)
+`PATCH /api/events/[id]` 🔒 (Premium owner only)
+- **Input:**
+```json
+{
+  "deadline": "2025-12-20T23:59:59Z",
+  "description": "Deadline extended due to popular demand"
+}
+```
+- **Output:**
+```json
+{
+  "message": "Event updated successfully",
+  "event": {
+    "id": 1,
+    "deadline": "2025-12-20T23:59:59Z",
+    "description": "Deadline extended due to popular demand"
+  }
+}
+```
+
+### Delete Event
+`DELETE /api/events/[id]` 🔒 (Premium owner only)
+- **Input:** None
+- **Output:**
+```json
+{
+  "message": "Event deleted successfully"
+}
+``profile }`
+
+---
+
+## Films
+
+### Get All User Films
+`GET /api/films` 🔒
+- **Output:** `{ films: [...], count }`
+
+### Create Film
+`POST /api/films` 🔒 (multipart/form-data)
+- **Input:** 
+  - `title` (required)
+  - `genre` (required, JSON array)
+  - `language` (required)
+  - `description` (optional)
+  - `duration` (optional, integer)
+  - `videoFile` (optional, file)
+  - `subtitleFile` (optional, file, max 5MB)
+- **Output:** `{ message, film }`
+
+### Get Film by ID
+`GET /api/films/[id]`
+- **Output:** `{ film }`
+
+### Update Film (Full)
+`PUT /api/films/[id]` 🔒 (owner only, multipart/form-data)
+- **Input:** Same as Create + `removeVideo`, `removeSubtitle`
+- **Output:** `{ message, film }`
+
+### Update Film (Partial)
+`PATCH /api/films/[id]` 🔒 (owner only, multipart/form-data)
+- **Input:** Any fields from Create
+- **Output:** `{ message, film }`
+
+### Delete Film
+`DELETE /api/films/[id]` 🔒 (owner only)
+- **Output:** `{ message }`
+
+---
+
+## Film Crew
+
+### Get Film Crew
+`GET /api/films/[id]/crew`
+- **Output:** `{ crew: [...], count }`
+
+### Add Crew Member
+`POST /api/films/[id]/crew` 🔒 (owner only)
+- **Input:** `{ crewName, crewRole }`
+- **Output:** `{ message, crew }`
+
+### Get Crew Member
+`GET /api/films/[id]/crew/[crewId]`
+- **Output:** `{ crew }`
+
+### Update Crew Member
+`PUT /api/films/[id]/crew/[crewId]` 🔒 (owner only)
+- **Input:** `{ crewName, crewRole }`
+- **Output:** `{ message, crew }`
+
+### Delete Crew Member
+`DELETE /api/films/[id]/crew/[crewId]` 🔒 (owner only)
+- **Output:** `{ message }`
+
+---
+
+## Film Documents
+
+### Get Film Documents
+`GET /api/films/[id]/documents`
+- **Output:** `{ documents: [...], count }`
+
+### Upload Document
+`POST /api/films/[id]/documents` 🔒 (owner only, multipart/form-data)
+- **Input:** `document` (file, PDF/DOC/DOCX/TXT, max 20MB)
+- **Output:** `{ message, document }`
+
+### Get Document
+`GET /api/films/[id]/documents/[documentId]`
+- **Output:** `{ document }`
+
+### Update Document
+`PUT /api/films/[id]/documents/[documentId]` 🔒 (owner only, multipart/form-data)
+- **Input:** `document` (file)
+- **Output:** `{ message, document }`
+
+### Delete Document
+`DELETE /api/films/[id]/documents/[documentId]` 🔒 (owner only)
+- **Output:** `{ message }`
+
+---
+
+## Events
+
+### Get All Events
+`GET /api/events?my=true&limit=10&offset=0`
+- **Query Params:** `my` (boolean), `limit`, `offset`
+- **Output:** `{ events: [...], count }`
+
+### Create Event
+`POST /api/events` 🔒 (Premium only)
+- **Input:** `{ title, genre (array), language, deadline, description?, duration?, location?, previousDeadline? }`
+- **Output:** `{ message, event, remainingEvents }`
+- **Limits:** Premium users: 5 events/month, Free users: Cannot create events
+- **Error (limit reached):** `{ error, limit, used }` with status 403
+
+### Get Event by ID
+`GET /api/events/[id]`
+- **Output:** `{ event }`
+
+### Update Event (Full)
+`PUT /api/events/[id]` 🔒 (Premium owner only)
+- **Input:** Same as Create
+- **Output:** `{ message, event }`
+
+### Update Event (Partial)
+`PATCH /api/events/[id]` 🔒 (Premium owner only)
+- **Input:** Any fields from Create
+- **Output:** `{ message, event }`
+
+### Delete Event
+`DELETE /api/events/[id]` 🔒 (Premium owner only)
+- **Output:** `{ message }`
+
+---
+
+## Event Images
+
+### Get Event Images
+`GET /api/events/[id]/images`
+- **Output:** `{ images: [...], count }`
+
+### Upload Image
+`POST /api/events/[id]/images` 🔒 (Premium owner only, multipart/form-data)
+- **Input:** `image` (file, JPEG/PNG/GIF/WebP, max 10MB)
+- **Output:** `{ message, image }`
+
+### Get Image
+`GET /api/events/[id]/images/[imageId]`
+- **Output:** `{ image }`
+
+### Delete Image
+`DELETE /api/events/[id]/images/[imageId]` 🔒 (Premium owner only)
+- **Output:** `{ message }`
+
+---
+
+## Event Submissions
+
+### Get Event Submissions
+`GET /api/events/[id]/submissions`
+- **Output:** `{ event, submissions: [...], count, isEventOwner }`
+- **Note:** Event owners see full details, public sees limited info
+
+---
+
+## Event Winners
+
+### Get Winners
+`GET /api/events/[id]/winners`
+- **Output:** `{ winners: [...], count }`
+
+### Add Winner
+`POST /api/events/[id]/winners` 🔒 (owner only)
+- **Input:** `{ eventFilmSubmissionId, category, filmCrewId? }`
+- **Output:** `{ message, winner }`
+
+### Get Winner
+`GET /api/events/[id]/winners/[winnerId]`
+- **Output:** Winner details
+
+### Update Winner
+`PATCH /api/events/[id]/winners/[winnerId]` 🔒 (owner only)
+- **Input:** `{ eventFilmSubmissionId?, category?, filmCrewId? }`
+- **Output:** `{ message, winner }`
+
+### Delete Winner
+`DELETE /api/events/[id]/winners/[winnerId]` 🔒 (owner only)
+- **Output:** `{ message }`
+
+---
+
+## Submissions
+
+### Get User Submissions
+`GET /api/submissions` 🔒
+- **Output:** `{ myFilmSubmissions: [...], myEventSubmissions: [...], totalCount }`
+
+### Submit Film to Event
+`POST /api/submissions` 🔒
+- **Input:** `{ eventId, filmId }`
+- **Output:** `{ message, submission, remainingSubmissions }`
+- **Limits:** Free users: 2/month, Premium users: 8/month
+- **Error (limit reached):** `{ error, limit, used }` with status 403
+
+### Get Submission
+`GET /api/submissions/[id]` 🔒 (film or event owner)
+- **Output:** `{ submission: { id, eventId, filmId, submissionStatus, event, film } }`
+
+### Update Submission Status
+`PATCH /api/submissions/[id]` 🔒 (Premium event owner only)
+- **Input:** `{ submissionStatus: "submitted" | "under_review" | "reviewed" }`
+- **Output:** `{ message, submission }`
+
+### Delete Submission
+`DELETE /api/submissions/[id]` 🔒 (film owner only)
+- **Output:** `{ message }`
+
+---
+
+## Comments
+
+### Get Comments
+`GET /api/submissions/[id]/comments` 🔒 (film or event owner)
+- **Output:** `{ submissionId, comments: [...], totalComments, userRole }`
+
+### Add Comment
+`POST /api/submissions/[id]/comments` 🔒 (Premium event owner only)
+- **Input:** `{ comment }`
+- **Output:** `{ message, comment }`
+
+### Update Comment
+`PATCH /api/submissions/[id]/comments/[commentId]` 🔒 (Premium owner who created it)
+- **Input:** `{ comment }`
+- **Output:** `{ message, comment }`
+
+### Delete Comment
+`DELETE /api/submissions/[id]/comments/[commentId]` 🔒 (Premium owner who created it)
+- **Output:** `{ message }`
+
+---
+
+## Payment (ABA PayWay)
+
+### Create Checkout
+`POST /api/checkout`
+- **Input:**
+```json
+{
+  "amount": "10.00",
+  "currency": "USD",
+  "firstname": "John",
+  "lastname": "Doe",
+  "email": "john@example.com",
+  "phone": "85512345678",
+  "items": [],
+  "payment_option": "cards",
+  "return_params": "{\"userUuid\":\"uuid-here\"}"
+}
+```
+- **Output:**
+```json
+{
+  "success": true,
+  "transactionId": "TXN1234567890",
+  "status": "success",
+  "description": "Payment created",
+  "qrString": "00020101...",
+  "qrImage": "data:image/png;base64...",
+  "abapay_deeplink": "https://abapay.app/...",
+  "app_store": "https://apps.apple.com/...",
+  "play_store": "https://play.google.com/..."
+}
+```
+- **Payment Options:** `cards`, `abapay`, `abapay_khqr`, `bakong`
+- **Note:** QR payments (abapay, abapay_khqr, bakong) return QR codes for scanning
+
+### Payment Callback
+`GET /api/payment-callback`
+- Handles ABA PayWay callback after payment
+- Automatically upgrades user to Premium (30 days)
+- Updates transaction status in database
+- **Query Parameters:** `tran_id`, `status`, `amount`, `hash`, etc.
+- **Output:** HTML page or JSON response
+
+### Get Transactions
+`GET /api/transactions` 🔒
+- **Output:**
+```json
+{
+  "transactions": [
+    {
+      "id": 1,
+      "uid": 5,
+      "tranId": "TXN1234567890",
+      "amount": "10.00",
+      "currency": "USD",
+      "status": "success",
+      "paymentOption": "cards",
+      "description": "Premium subscription - 30 days",
+      "createdAt": "2024-12-01T10:30:00Z"
+    }
+  ]
+}
+```
+
+### Get Transaction by ID
+`GET /api/transactions/[tranId]` 🔒
+- **Output:**
+```json
+{
+  "id": 1,
+  "uid": 5,
+  "tranId": "TXN1234567890",
+  "amount": "10.00",
+  "currency": "USD",
+  "status": "success",
+  "paymentOption": "cards",
+  "description": "Premium subscription - 30 days",
+  "createdAt": "2024-12-01T10:30:00Z"
+}
+```
+
+---
+
+## Legend
+- 🔒 = Requires authentication
+- (owner only) = Must own the resource
+- (Premium only) = Requires Premium subscription
+- multipart/form-data = Use FormData for file uploads
+
+## HTTP Status Codes
+- `200` OK
+- `201` Created
+- `400` Bad Request
+- `401` Unauthorized
+- `403` Forbidden
+- `404` Not Found
+- `500` Server Error
+
+---
+
+**Last Updated:** December 2024

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Brand from '../../components/Brand';
+import * as passwordApi from '../../api/passwordApi';
 
 export default function ResetPasswordForm() {
   const router = useRouter();
@@ -37,14 +38,10 @@ export default function ResetPasswordForm() {
       if (!accessToken) throw new Error('Invalid or missing reset link.');
       if (!pw1 || !pw2) throw new Error('All fields required.');
       if (pw1 !== pw2) throw new Error('Passwords do not match.');
-      // POST to backend
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/resetPassword`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw1, access_token: accessToken, refresh_token: refreshToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      
+      // Use the passwordApi
+      await passwordApi.resetPassword(pw1, accessToken, refreshToken);
+      
       setSuccess(true);
       setTimeout(() => {
         const target = '/password-changed';

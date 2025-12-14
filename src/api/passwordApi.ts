@@ -10,17 +10,17 @@ export async function requestPasswordReset(email: string) {
     body: JSON.stringify({ email }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to send reset email');
+  if (!res.ok) throw new Error(data.error || data.message || 'Failed to send reset email');
   return data;
 }
 
-export async function resetPassword(email: string, code: string, newPassword: string) {
+export async function resetPassword(password: string, access_token: string, refresh_token?: string) {
   const res = await fetch(`${API_URL}/api/auth/resetPassword`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, code, newPassword }),
+    body: JSON.stringify({ password, access_token, refresh_token }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+  if (!res.ok) throw new Error(data.error || data.message || 'Failed to reset password');
   return data;
 }

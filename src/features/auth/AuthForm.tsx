@@ -35,12 +35,24 @@ export default function AuthForm({ mode }: AuthFormProps) {
       if (mode === 'signup') {
         // Call backend signup
         const data = await authApi.signup(email, pw, name || org || email.split('@')[0]);
-        useAuthStore.getState().setUser(email, []);
+        // Set user in store with the returned user data
+        useAuthStore.getState().setUser(
+          data.user?.email || email, 
+          [], 
+          undefined,
+          data.user
+        );
         router.push('/choose-role');
       } else {
         // Login
         const data = await authApi.login(email, pw);
-        useAuthStore.getState().setUser(email, data.profile?.roles || []);
+        // Set user in store with the returned user data
+        useAuthStore.getState().setUser(
+          data.user?.email || email, 
+          [], 
+          undefined,
+          data.user
+        );
         router.push('/choose-role');
       }
     } catch (err: any) {
