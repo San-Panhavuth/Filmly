@@ -37,8 +37,16 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
     return best;
   }, '');
 
-  // Redirect based on role
+  // Redirect based on authentication and role
   React.useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    
+    // If not authenticated, redirect to login
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    
     // Only redirect if user is NOT a filmmaker
     if (activeRole && activeRole !== 'filmmaker') {
       window.location.href = activeRole === 'organizer' ? '/organizer' : '/choose-role';
