@@ -1,3 +1,5 @@
+import { useState, useCallback } from 'react';
+
 export type FetchPageResult<T> = { data: T[]; total: number };
 
 export type UsePaginatedOptions<T> = {
@@ -18,7 +20,6 @@ export function usePaginated<T>({ initialItems = [], pageSize = 12, fetchPage }:
   // NOTE: we can't use React hooks here since this is a plain helper file; export a factory
   // Consumer components should call createPaginated() inside a component to get reactive state.
   function createPaginated() {
-    const { useState, useCallback } = require('react');
     const [items, setItems] = useState<T[]>(initialItems.slice(0, pageSize));
     const [total, setTotal] = useState<number>(initialTotal);
     const [page, setPage] = useState<number>(initialItems.length ? 1 : 0);

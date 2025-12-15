@@ -68,13 +68,28 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'filmly-auth-storage',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          const value = localStorage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return;
+          localStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return;
+          localStorage.removeItem(name);
+        },
+      },
       partialize: (state) => ({ 
         userEmail: state.userEmail,
         user: state.user,
         roles: state.roles,
         activeRole: state.activeRole,
         isAuthenticated: state.isAuthenticated
-      }),
+      }) as AuthState,
     }
   )
 );

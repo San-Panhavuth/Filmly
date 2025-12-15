@@ -22,7 +22,6 @@ const nav: NavItem[] = [
 export default function FilmmakerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
-  const role = useAuthStore((s) => s.role);
   const roles = useAuthStore((s) => s.roles);
   const email = useAuthStore((s) => s.userEmail);
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -113,6 +112,7 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
                 onClick={() => {
                   // Switch to organizer role and redirect
                   const { userEmail, roles = [] } = useAuthStore.getState();
+                  if (!userEmail) return;
                   const newRoles = roles.includes('organizer') ? roles : [...roles, 'organizer'];
                   useAuthStore.getState().setUser(userEmail, newRoles, 'organizer');
                   window.location.href = '/organizer/dashboard';

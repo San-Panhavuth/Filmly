@@ -22,7 +22,7 @@ export default function FestivalSidebar() {
     pathname === href || pathname.startsWith(href + '/');
 
   const logout = () => {
-    useAuthStore.getState().setUser(null, []);
+    useAuthStore.getState().signOut();
     router.push('/choose-role');
   };
 

@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import SubmissionsHeaderSection from '../../../src/view/films/sections/SubmissionsHeaderSection';
-import SubmissionsFiltersSection from '../../../src/view/films/sections/SubmissionsFiltersSection';
-import SubmissionsTableSection from '../../../src/view/films/sections/SubmissionsTableSection';
-import SubmissionsLegendSection from '../../../src/view/films/sections/SubmissionsLegendSection';
+import SubmissionsHeaderSection from './src/view/films/sections/SubmissionsHeaderSection';
+import SubmissionsFiltersSection from './src/view/films/sections/SubmissionsFiltersSection';
+import SubmissionsTableSection from './src/view/films/sections/SubmissionsTableSection';
+import SubmissionsLegendSection from './src/view/films/sections/SubmissionsLegendSection';
 
 export default function SubmissionsPage() {
   return (

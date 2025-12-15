@@ -11,11 +11,11 @@ type Role = 'filmmaker' | 'organizer';
 
 interface AuthFormProps {
   mode: Mode;
+  hideRole?: boolean;
 }
 
-export default function AuthForm({ mode }: AuthFormProps) {
+export default function AuthForm({ mode, hideRole }: AuthFormProps) {
   const router = useRouter();
-  const signIn = useAuthStore((s) => s.signIn);
 
   const [role, setRole] = useState<Role>('filmmaker');
   const [name, setName] = useState('');

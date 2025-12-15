@@ -106,6 +106,7 @@ export default function OrganizerSidebar() {
 							onClick={() => {
 								// Switch to filmmaker role and redirect
 								const { userEmail, roles = [] } = useAuthStore.getState();
+								if (!userEmail) return;
 								const newRoles = roles.includes('filmmaker') ? roles : [...roles, 'filmmaker'];
 								useAuthStore.getState().setUser(userEmail, newRoles, 'filmmaker');
 								router.push('/films');

@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AddFilmForm from '../../../../src/view/films/add/AddFilmForm';
 
-export default function Page() {
+function AddFilmPageContent() {
   const searchParams = useSearchParams();
   const festivalId = searchParams.get('festivalId');
 
@@ -33,5 +33,13 @@ export default function Page() {
    * NOTE: The AddFilmForm component should handle both cases based on festivalId.
    */
 
-  return <AddFilmForm festivalId={festivalId} />;
+  return <AddFilmForm festivalId={festivalId ?? undefined} />;
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddFilmPageContent />
+    </Suspense>
+  );
 }

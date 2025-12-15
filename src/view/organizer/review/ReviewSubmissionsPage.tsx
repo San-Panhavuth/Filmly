@@ -254,7 +254,7 @@ export default function ReviewSubmissionsPage() {
                   <td className="px-4 py-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ${
-                        statusColors[s.submissionStatus] || 'bg-gray-400 text-white'
+                        statusColors[s.submissionStatus as keyof typeof statusColors] || 'bg-gray-400 text-white'
                       }`}
                       onClick={() => {
                         setModal(s);
@@ -346,7 +346,7 @@ export default function ReviewSubmissionsPage() {
             </div>
             <div className="mb-2">
               <div className="text-xs text-gray-500 mb-1">Current Status</div>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[status]}`}>{status}</span>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[status as keyof typeof statusColors]}`}>{status}</span>
             </div>
             <div className="mb-4">
               <div className="text-xs text-gray-500 mb-1">Judge Comments</div>
