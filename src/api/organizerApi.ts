@@ -424,6 +424,23 @@ export async function deleteAllEventImages(eventId: number, accessToken?: string
 }
 
 // ============================================================================
+// FILM CREW MANAGEMENT
+// ============================================================================
+
+/**
+ * Get all crew members for a specific film
+ */
+export async function getFilmCrew(filmId: number) {
+  const res = await fetch(`${API_URL}/api/films/${filmId}/crew`, {
+    method: 'GET',
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'Failed to fetch film crew');
+  return data;
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
