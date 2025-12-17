@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiFilm, FiAward, FiX } from 'react-icons/fi';
-import { getMyEvents, getEventSubmissions, updateSubmissionStatus, assignWinner } from '@/api/organizerApi';
+import { FiFilm, FiAward, FiX, FiTrash2 } from 'react-icons/fi';
+import { getMyEvents, getEventSubmissions, updateSubmissionStatus, assignWinner, getFilmCrew, getEventWinners, deleteWinner } from '@/api/organizerApi';
 
 const statusColors = {
   'under_review': 'bg-blue-500 text-white',
@@ -31,40 +31,32 @@ const statusButtons = [
   { label: 'nominee', value: 'nominee', color: 'bg-purple-500 text-white' },
 ];
 
-const mainAwards = [
-  '1st',
-  '2nd',
-  '3rd',
-];
-const genreAwards = [
-  'None',
-  'Best Comedy',
-  'Best Romance',
-  'Best Drama',
-  'Best Educational',
-  'Best Documentary',
-  'Best War',
-  'Best Fantasy',
-  'Best Action',
-  'Best Traditional',
-  'Best Western',
-  'Best Horror',
-  'Best Animation',
-  'Best Thriller',
-  'Best Adventure',
-  'Best Sci-Fi',
-];
-const technicalAwards = [
-  'None',
-  'Best Cinematography',
-  'Best Editing',
-  'Best Sound & Music',
-  'Best Screenplay',
-  'Best Director',
-  'Best Actor',
-  'Best Actress',
-  'Best Youth Film',
-  'Audience Choice Award',
+const allAwards = [
+  { value: '1st', label: '1st Place', requiresCrew: false },
+  { value: '2nd', label: '2nd Place', requiresCrew: false },
+  { value: '3rd', label: '3rd Place', requiresCrew: false },
+  { value: 'Comedy', label: 'Best Comedy', requiresCrew: false },
+  { value: 'Romance', label: 'Best Romance', requiresCrew: false },
+  { value: 'Drama', label: 'Best Drama', requiresCrew: false },
+  { value: 'Educational', label: 'Best Educational', requiresCrew: false },
+  { value: 'Documentary', label: 'Best Documentary', requiresCrew: false },
+  { value: 'War', label: 'Best War', requiresCrew: false },
+  { value: 'Fantasy', label: 'Best Fantasy', requiresCrew: false },
+  { value: 'Action', label: 'Best Action', requiresCrew: false },
+  { value: 'Traditional', label: 'Best Traditional', requiresCrew: false },
+  { value: 'Western', label: 'Best Western', requiresCrew: false },
+  { value: 'Horror', label: 'Best Horror', requiresCrew: false },
+  { value: 'Animation', label: 'Best Animation', requiresCrew: false },
+  { value: 'Thriller', label: 'Best Thriller', requiresCrew: false },
+  { value: 'Adventure', label: 'Best Adventure', requiresCrew: false },
+  { value: 'Science Fiction', label: 'Best Sci-Fi', requiresCrew: false },
+  { value: 'Cinematography', label: 'Best Cinematography', requiresCrew: false },
+  { value: 'Screenplay', label: 'Best Screenplay', requiresCrew: false },
+  { value: 'Director', label: 'Best Director', requiresCrew: true },
+  { value: 'Actor', label: 'Best Actor', requiresCrew: true },
+  { value: 'Actress', label: 'Best Actress', requiresCrew: true },
+  { value: 'Youth Film', label: 'Best Youth Film', requiresCrew: false },
+  { value: 'Audience Choice', label: 'Audience Choice Award', requiresCrew: false },
 ];
 
 export default function ReviewSubmissionsPage() {
@@ -74,16 +66,18 @@ export default function ReviewSubmissionsPage() {
   const [juryScore, setJuryScore] = useState('');
   const [judgeComment, setJudgeComment] = useState('');
   const [awardModal, setAwardModal] = useState<any>(null);
-  const [mainAward, setMainAward] = useState('');
-  const [genreAward, setGenreAward] = useState('');
-  const [techAward, setTechAward] = useState('');
+  const [selectedAward, setSelectedAward] = useState('');
+  const [filmCrewMembers, setFilmCrewMembers] = useState<any[]>([]);
+  const [selectedCrewId, setSelectedCrewId] = useState<number | null>(null);
+  const [loadingCrew, setLoadingCrew] = useState(false);
 
   // State for API data
   const [festivals, setFestivals] = useState<any[]>([]);
-  const [selectedFestival, setSelectedFestival] = useState<string>('');
+  const [selectedFestival, setSelectedFestival] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('All Status');
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   // Fetch festivals on mount
@@ -93,35 +87,95 @@ export default function ReviewSubmissionsPage() {
 
   // Fetch submissions when festival changes
   useEffect(() => {
-    if (selectedFestival && selectedFestival !== 'Select Festival') {
+    if (selectedFestival === 'all' && festivals.length > 0) {
+      fetchSubmissions();
+    } else if (selectedFestival && selectedFestival !== 'all') {
       fetchSubmissions();
     }
-  }, [selectedFestival]);
+  }, [selectedFestival, festivals]);
 
   const fetchFestivals = async () => {
     try {
       const response = await getMyEvents();
       setFestivals(response.events || []);
-      if (response.events && response.events.length > 0) {
-        setSelectedFestival(response.events[0].id.toString());
-      }
     } catch (err: any) {
       console.error('Error fetching festivals:', err);
       setError(err.message || 'Failed to load festivals');
     }
   };
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = async (isRefresh = false) => {
     try {
-      setLoading(true);
-      const eventId = parseInt(selectedFestival);
-      const response = await getEventSubmissions(eventId);
-      setSubmissions(response.submissions || []);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      
+      let allSubmissions: any[] = [];
+      let allWinnersData: any[] = [];
+      
+      if (selectedFestival === 'all') {
+        // Fetch submissions and winners from all festivals
+        const allPromises = festivals.map(async (festival) => {
+          const [submissionsResponse, winnersResponse] = await Promise.all([
+            getEventSubmissions(festival.id),
+            getEventWinners(festival.id)
+          ]);
+          return { submissionsResponse, winnersResponse };
+        });
+        
+        const results = await Promise.all(allPromises);
+        
+        results.forEach(({ submissionsResponse, winnersResponse }) => {
+          allSubmissions = allSubmissions.concat(submissionsResponse.submissions || []);
+          allWinnersData = allWinnersData.concat(winnersResponse.winners || []);
+        });
+      } else {
+        // Fetch submissions and winners for specific event
+        const eventId = parseInt(selectedFestival);
+        const [submissionsResponse, winnersResponse] = await Promise.all([
+          getEventSubmissions(eventId),
+          getEventWinners(eventId)
+        ]);
+        allSubmissions = submissionsResponse.submissions || [];
+        allWinnersData = winnersResponse.winners || [];
+      }
+      
+      console.log('[ReviewSubmissions] All Submissions:', allSubmissions);
+      console.log('[ReviewSubmissions] All Winners:', allWinnersData);
+      
+      // Map winners to submissions by eventFilmSubmissionId
+      const winnersMap = new Map();
+      if (allWinnersData && Array.isArray(allWinnersData)) {
+        allWinnersData.forEach((winner: any) => {
+          const submissionId = winner.eventFilmSubmissionId;
+          if (!winnersMap.has(submissionId)) {
+            winnersMap.set(submissionId, []);
+          }
+          winnersMap.get(submissionId).push({
+            id: winner.id,
+            category: winner.category,
+            crewName: winner.crewName,
+            crewRole: winner.crewRole,
+          });
+        });
+      }
+      
+      // Add awards to each submission
+      const submissionsWithAwards = allSubmissions.map((submission: any) => ({
+        ...submission,
+        awards: winnersMap.get(submission.id) || [],
+      }));
+      
+      console.log('[ReviewSubmissions] Submissions with awards:', submissionsWithAwards);
+      setSubmissions(submissionsWithAwards);
     } catch (err: any) {
       console.error('Error fetching submissions:', err);
       setError(err.message || 'Failed to load submissions');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -131,35 +185,95 @@ export default function ReviewSubmissionsPage() {
     try {
       await updateSubmissionStatus(modal.id, status as any);
       // Refresh submissions
-      fetchSubmissions();
+      fetchSubmissions(true);
       setModal(null);
     } catch (err: any) {
       alert('Failed to update status: ' + err.message);
     }
   };
 
-  const handleAssignAward = async () => {
-    if (!awardModal || !selectedFestival) return;
+  const handleAwardChange = async (value: string) => {
+    setSelectedAward(value);
+    setSelectedCrewId(null);
+    
+    // Check if this award requires crew selection
+    const awardInfo = allAwards.find(a => a.value === value);
+    if (awardInfo?.requiresCrew && awardModal?.film?.id) {
+      // Fetch crew members for this film
+      setLoadingCrew(true);
+      try {
+        const response = await getFilmCrew(awardModal.film.id);
+        setFilmCrewMembers(response.crew || []);
+      } catch (err: any) {
+        console.error('Error fetching crew:', err);
+        setFilmCrewMembers([]);
+      } finally {
+        setLoadingCrew(false);
+      }
+    } else {
+      setFilmCrewMembers([]);
+    }
+  };
 
-    const category = mainAward || genreAward || techAward;
-    if (!category) {
-      alert('Please select at least one award');
+  const handleAssignAward = async () => {
+    if (!awardModal) return;
+
+    if (!selectedAward) {
+      alert('Please select an award');
+      return;
+    }
+
+    // Check if crew selection is required
+    const awardInfo = allAwards.find(a => a.value === selectedAward);
+    if (awardInfo?.requiresCrew && !selectedCrewId) {
+      alert('Please select a crew member for this award');
+      return;
+    }
+
+    // Get the event ID from the submission, not from the selected filter
+    const eventId = awardModal.eventId;
+    if (!eventId) {
+      alert('Unable to determine event for this submission');
       return;
     }
 
     try {
-      await assignWinner(parseInt(selectedFestival), {
+      const winnerData: any = {
         eventFilmSubmissionId: awardModal.id,
-        category: category,
-      });
+        category: selectedAward,
+      };
+
+      if (selectedCrewId) {
+        winnerData.filmCrewId = selectedCrewId;
+      }
+
+      await assignWinner(eventId, winnerData);
       // Refresh submissions
-      fetchSubmissions();
+      fetchSubmissions(true);
       setAwardModal(null);
-      setMainAward('');
-      setGenreAward('');
-      setTechAward('');
+      setSelectedAward('');
+      setFilmCrewMembers([]);
+      setSelectedCrewId(null);
     } catch (err: any) {
       alert('Failed to assign award: ' + err.message);
+    }
+  };
+
+  const handleDeleteAward = async (winnerId: number, eventId: number, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    if (!confirm('Are you sure you want to remove this award?')) {
+      return;
+    }
+
+    try {
+      await deleteWinner(eventId, winnerId);
+      // Refresh submissions
+      fetchSubmissions(true);
+    } catch (err: any) {
+      alert('Failed to delete award: ' + err.message);
     }
   };
 
@@ -185,7 +299,7 @@ export default function ReviewSubmissionsPage() {
             value={selectedFestival}
             onChange={(e) => setSelectedFestival(e.target.value)}
           >
-            <option value="">Select Festival</option>
+            <option value="all">All Events</option>
             {festivals.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.title}
@@ -220,7 +334,15 @@ export default function ReviewSubmissionsPage() {
         </div>
       )}
       {/* Table */}
-      <div className="bg-white rounded-xl shadow p-6">
+      <div className="bg-white rounded-xl shadow p-6 relative">
+        {refreshing && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-md">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-900"></div>
+              <span className="text-sm text-gray-700 font-medium">Refreshing...</span>
+            </div>
+          </div>
+        )}
         <table className="min-w-full text-left border-separate border-spacing-y-2">
           <thead>
             <tr className="text-gray-500 text-sm">
@@ -229,6 +351,7 @@ export default function ReviewSubmissionsPage() {
               <th className="px-4 py-2 font-semibold">Genre</th>
               <th className="px-4 py-2 font-semibold">Duration</th>
               <th className="px-4 py-2 font-semibold">Status</th>
+              <th className="px-4 py-2 font-semibold">Award</th>
               <th className="px-4 py-2 font-semibold">Actions</th>
             </tr>
           </thead>
@@ -264,14 +387,43 @@ export default function ReviewSubmissionsPage() {
                       {s.submissionStatus.replace('_', ' ')}
                     </span>
                   </td>
+                  <td className="px-4 py-2 text-gray-900">
+                    {s.awards && s.awards.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {s.awards.map((award: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-2 group">
+                            <FiAward className="text-yellow-500 flex-shrink-0" />
+                            <span className="text-sm font-medium flex-1">
+                              {award.category}
+                              {award.crewName && (
+                                <span className="text-gray-500 text-xs ml-1">
+                                  ({award.crewName})
+                                </span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteAward(award.id, s.eventId, e)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-50 rounded"
+                              title="Remove award"
+                            >
+                              <FiTrash2 className="text-red-500 text-sm" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">No award</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 flex gap-2">
                     <button
                       className="border border-green-900 text-green-900 font-bold px-4 py-1 rounded flex items-center gap-1 hover:bg-green-50"
                       onClick={() => {
                         setAwardModal(s);
-                        setMainAward('');
-                        setGenreAward('');
-                        setTechAward('');
+                        setSelectedAward('');
+                        setFilmCrewMembers([]);
+                        setSelectedCrewId(null);
                       }}
                     >
                       <FiAward className="text-green-900" /> Award
@@ -281,8 +433,8 @@ export default function ReviewSubmissionsPage() {
               ))
             ) : !loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  {selectedFestival ? 'No submissions yet for this festival' : 'Please select a festival'}
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  {selectedFestival === 'all' ? 'No submissions yet across all events' : selectedFestival ? 'No submissions yet for this festival' : 'Please select a festival'}
                 </td>
               </tr>
             ) : null}
@@ -390,49 +542,72 @@ export default function ReviewSubmissionsPage() {
             <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setAwardModal(null)}><FiX size={20} /></button>
             <h2 className="text-xl font-bold text-green-900 mb-1">Assign Award</h2>
             <p className="text-gray-500 mb-6">Assign an award to <span className="font-semibold text-gray-900">{awardModal.film?.title || 'this film'}</span></p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Main Awards (Top 1-3)</label>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Award Category</label>
               <select
-                className="w-full border rounded px-3 py-2 bg-gray-50"
-                value={mainAward}
-                onChange={e => setMainAward(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-900 focus:border-transparent"
+                value={selectedAward}
+                onChange={(e) => handleAwardChange(e.target.value)}
               >
-                <option value="">Select main award</option>
-                {mainAwards.map(a => <option key={a} value={a}>{a}</option>)}
+                <option value="">Choose an award...</option>
+                <optgroup label="Main Awards">
+                  {allAwards.filter(a => ['1st', '2nd', '3rd'].includes(a.value)).map(a => (
+                    <option key={a.value} value={a.value}>{a.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Genre Awards">
+                  {allAwards.filter(a => ['Comedy', 'Romance', 'Drama', 'Educational', 'Documentary', 'War', 'Fantasy', 'Action', 'Traditional', 'Western', 'Horror', 'Animation', 'Thriller', 'Adventure', 'Science Fiction'].includes(a.value)).map(a => (
+                    <option key={a.value} value={a.value}>{a.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Technical & Special Awards">
+                  {allAwards.filter(a => ['Cinematography', 'Screenplay', 'Director', 'Actor', 'Actress', 'Youth Film', 'Audience Choice'].includes(a.value)).map(a => (
+                    <option key={a.value} value={a.value}>{a.label}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Genre-Specific Award</label>
-              <select
-                className="w-full border rounded px-3 py-2 bg-gray-50"
-                value={genreAward}
-                onChange={e => setGenreAward(e.target.value)}
-              >
-                <option value="">Select genre award</option>
-                {genreAwards.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Technical/Skill Awards</label>
-              <select
-                className="w-full border rounded px-3 py-2 bg-gray-50"
-                value={techAward}
-                onChange={e => setTechAward(e.target.value)}
-              >
-                <option value="">Select technical award</option>
-                {technicalAwards.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div className="flex justify-end gap-2">
+
+            {/* Show crew selection if award requires it */}
+            {selectedAward && allAwards.find(a => a.value === selectedAward)?.requiresCrew && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Crew Member
+                  {loadingCrew && <span className="text-gray-400 text-xs ml-2">(Loading...)</span>}
+                </label>
+                {!loadingCrew && filmCrewMembers.length > 0 ? (
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-900 focus:border-transparent"
+                    value={selectedCrewId || ''}
+                    onChange={(e) => setSelectedCrewId(parseInt(e.target.value))}
+                  >
+                    <option value="">Select crew member...</option>
+                    {filmCrewMembers.map(crew => (
+                      <option key={crew.id} value={crew.id}>
+                        {crew.crewName} - {crew.crewRole}
+                      </option>
+                    ))}
+                  </select>
+                ) : !loadingCrew ? (
+                  <p className="text-sm text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-3">
+                    No crew members found for this film. Please add crew members first.
+                  </p>
+                ) : null}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 mt-8">
               <button
-                className="border border-gray-300 rounded px-6 py-2 text-gray-700 bg-white"
+                className="border border-gray-300 rounded px-6 py-2 text-gray-700 bg-white hover:bg-gray-50"
                 onClick={() => setAwardModal(null)}
               >
                 Cancel
               </button>
               <button
-                className="bg-green-900 text-white font-bold px-6 py-2 rounded hover:bg-green-800"
+                className="bg-green-900 text-white font-bold px-6 py-2 rounded hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 onClick={handleAssignAward}
+                disabled={!selectedAward || (allAwards.find(a => a.value === selectedAward)?.requiresCrew && !selectedCrewId)}
               >
                 Assign Award
               </button>
