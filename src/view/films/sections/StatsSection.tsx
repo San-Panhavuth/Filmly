@@ -56,50 +56,56 @@ function countAwards(submissions: Submission[]) {
 export default function StatsSection() {
   const [films, setFilms] = useState<Film[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [awardsCount, setAwardsCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchAwardsTotal() {
       setLoading(true);
       setError('');
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-        // Fetch films
+        // 1. Fetch films
         const filmsRes = await fetch('/api/films', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        let filmsData: Film[] = [];
-        if (filmsRes.ok) {
-          const data = await filmsRes.json();
-          filmsData = Array.isArray(data.films) ? data.films : [];
-        }
+        const filmsData = filmsRes.ok ? (await filmsRes.json()).films : [];
         setFilms(filmsData);
 
-        // Fetch analytics for submissions (active and past)
-        const analyticsRes = await fetch('/api/films/analytics', {
+        // 2. Fetch submissions
+        const subsRes = await fetch('/api/submissions', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        let submissionsData: Submission[] = [];
-        if (analyticsRes.ok) {
-          const data = await analyticsRes.json();
-          // Merge active and past submissions if both exist
-          submissionsData = [
-            ...(Array.isArray(data.activeSubmissions) ? data.activeSubmissions : []),
-            ...(Array.isArray(data.pastSubmissions) ? data.pastSubmissions : []),
-          ];
-        }
+        const submissionsData = subsRes.ok ? (await subsRes.json()).submissions : [];
         setSubmissions(submissionsData);
-      } catch (e) {
-        if (e instanceof Error) {
-          setError(e.message || 'Error fetching stats');
-        } else {
-          setError('Error fetching stats');
+
+        // 3. Collect all user's film IDs
+        const userFilmIds = new Set(filmsData.map(f => String(f.id)));
+        // 4. Collect all unique event IDs from submissions
+        const uniqueEvents = Array.from(new Set(submissionsData.map(s => s.event_id)));
+        let totalAwards = 0;
+        for (const eventId of uniqueEvents) {
+          if (!eventId) continue;
+          const url = `https://filmly-backend.vercel.app/api/events/${eventId}/winners`;
+          const res = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (Array.isArray(data.winners)) {
+            totalAwards += data.winners.filter(
+              (w: any) => userFilmIds.has(String(w.filmId)) && typeof w.category === 'string' && w.category.trim() !== ''
+            ).length;
+          }
         }
+        setAwardsCount(Number.isFinite(totalAwards) ? totalAwards : 0);
+      } catch (e) {
+        setError('Error fetching stats');
       }
       setLoading(false);
     }
-    fetchStats();
+    fetchAwardsTotal();
   }, []);
 
   const totalFilms = films.length;
@@ -122,7 +128,8 @@ export default function StatsSection() {
       .map((s) => s.film ? s.film.id : undefined)
       .filter((id): id is number => id !== undefined)
   );
-  const awardsWon = awardFilmIds.size;
+  // Use backend awards count if available, else fallback to old logic
+  const awardsWon = awardsCount !== null ? awardsCount : awardFilmIds.size;
 
   const cards = [
     { title: 'Total Films', value: totalFilms, subtitle: 'Films in portfolio', Icon: FilmIcon },

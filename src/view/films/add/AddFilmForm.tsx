@@ -24,9 +24,20 @@ const GENRES = [
 
 // Accept festivalId as prop to distinguish submission type
 export default function AddFilmForm({ festivalId, editId }: { festivalId?: string; editId?: string }) {
+    // Modal state for submission limit error
+    const [showLimitModal, setShowLimitModal] = useState(false);
+    const [limitInfo, setLimitInfo] = useState<{limit?: number, used?: number} | null>(null);
   // State for all fields
   const [title, setTitle] = useState('');
   const [country, setCountry] = useState('');
+  // ISO 3166 country list (shortened for brevity, but should be full in real use)
+  const COUNTRY_OPTIONS = [
+    'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (Congo-Brazzaville)','Costa Rica','Croatia','Cuba','Cyprus','Czechia','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar (Burma)','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','Other'
+  ];
+  // Major world languages (ISO 639-1, shortened for brevity, but should be full in real use)
+  const LANGUAGE_OPTIONS = [
+    'English','Mandarin Chinese','Hindi','Spanish','French','Standard Arabic','Bengali','Russian','Portuguese','Urdu','Indonesian','German','Japanese','Swahili','Marathi','Telugu','Turkish','Tamil','Yue Chinese (Cantonese)','Vietnamese','Korean','Wu Chinese (Shanghainese)','Javanese','Egyptian Arabic','Italian','Thai','Gujarati','Jin Chinese','Southern Min (includes Hokkien and Teochew)','Persian (Farsi)','Polish','Pashto','Kannada','Xiang Chinese','Malayalam','Sundanese','Hausa','Odia (Oriya)','Burmese','Hakka','Ukrainian','Bhojpuri','Tagalog (Filipino)','Yoruba','Maithili','Uzbek','Sindhi','Amharic','Fula','Romanian','Oromo','Igbo','Azerbaijani','Awadhi','Gan Chinese','Cebuano','Dutch','Kurdish','Serbo-Croatian','Malagasy','Saraiki','Nepali','Sinhalese','Chittagonian','Zhuang','Khmer','Turkmen','Assamese','Madurese','Somali','Marwari','Magahi','Haryanvi','Hungarian','Chhattisgarhi','Greek','Chewa','Deccan','Akan','Kazakh','Northern Min','Sylheti','Zulu','Czech','Kinyarwanda','Dhundhari','Haitian Creole','Eastern Min','Ilocano','Quechua','Kirundi','Swedish','Hmong','Shona','Uyghur','Hiligaynon/Ilonggo','Mossi','Xhosa','Belarusian','Balochi','Konkani','Other'
+  ];
   const [duration, setDuration] = useState<number | ''>('');
   const [genre, setGenre] = useState('');
   const [language, setLanguage] = useState('');
@@ -286,7 +297,20 @@ export default function AddFilmForm({ festivalId, editId }: { festivalId?: strin
         body: JSON.stringify({ eventId: festivalId, filmId }),
       });
       const subData = await subRes.json();
-      if (!subRes.ok) throw new Error(subData.message || 'Failed to submit film to festival');
+      if (!subRes.ok) {
+        // Check for monthly submission limit error
+        if (
+          subRes.status === 403 &&
+          subData?.error &&
+          subData.error.toLowerCase().includes('monthly submission limit')
+        ) {
+          setLimitInfo({ limit: subData.limit, used: subData.used });
+          setShowLimitModal(true);
+          setLoading(false);
+          return;
+        }
+        throw new Error(subData.message || subData.error || 'Failed to submit film to festival');
+      }
 
       setLoading(false);
       alert('Film submitted to festival successfully!');
@@ -307,6 +331,32 @@ export default function AddFilmForm({ festivalId, editId }: { festivalId?: strin
 
   return (
     <div className="max-w-6xl mx-auto p-6 relative">
+      {/* Submission Limit Modal */}
+      {showLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ pointerEvents: 'auto' }}>
+          {/* Blue-tinted overlay, less harsh than black */}
+          <div className="absolute inset-0" style={{ background: 'rgba(30, 64, 175, 0.18)', backdropFilter: 'blur(1.5px)' }} aria-hidden="true"></div>
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center relative animate-fade-in z-10">
+            <h2 className="text-xl font-bold text-[#0B5A2E] mb-4">Submission Limit Reached</h2>
+            <p className="mb-2 text-gray-700">
+              You have reached your monthly submission limit
+              {limitInfo && typeof limitInfo.limit === 'number' && typeof limitInfo.used === 'number' ? (
+                <> ({limitInfo.used} used of {limitInfo.limit})</>
+              ) : null}.
+            </p>
+            <p className="mb-2 text-gray-700">Free users can submit up to 2 films per month.</p>
+            <p className="mb-2 text-gray-700">Please subscribe to <span className="font-semibold text-[#0B5A2E]">Premium</span> to unlock more submissions, or wait until next month.</p>
+            <div className="mt-4">
+              <button
+                className="px-6 py-2 rounded bg-[#0B5A2E] text-white font-semibold hover:bg-[#16643a] transition"
+                onClick={() => setShowLimitModal(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Gmail field above Title field */}
       <section className="rounded-lg border border-[#E6E6E6] bg-white p-6 mb-6 shadow-sm">
         <h2 className="text-lg font-medium text-[#0B5A2E] mb-4">Film Details</h2>
@@ -341,10 +391,9 @@ export default function AddFilmForm({ festivalId, editId }: { festivalId?: strin
               className="mt-2 w-full rounded-md border px-3 py-2 text-sm bg-[#FBFBFB]"
             >
               <option value="">Select Country</option>
-              <option>Thailand</option>
-              <option>USA</option>
-              <option>France</option>
-              <option>India</option>
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           </div>
 
@@ -380,13 +429,12 @@ export default function AddFilmForm({ festivalId, editId }: { festivalId?: strin
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="mt-2 w-full rounded-md border px-3 py-2 text-sm bg-[#FBFBFB']"
+              className="mt-2 w-full rounded-md border px-3 py-2 text-sm bg-[#FBFBFB]"
             >
               <option value="">Select language</option>
-              <option>English</option>
-              <option>Thai</option>
-              <option>French</option>
-              <option>Spanish</option>
+              {LANGUAGE_OPTIONS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
             </select>
           </div>
         </div>

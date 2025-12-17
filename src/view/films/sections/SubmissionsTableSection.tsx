@@ -13,6 +13,9 @@ type Submission = {
   judgingStatus?: 'Under Review' | 'Shortlist' | 'Nominee' | '';
   comments?: string;
   image?: string;
+  eventId?: string;
+  filmId?: string;
+  awards?: string[]; // real awards
 };
 
 async function fetchSubmissions(): Promise<Submission[]> {
@@ -53,6 +56,8 @@ async function fetchSubmissions(): Promise<Submission[]> {
         judgingStatus,
         comments: item.comments || '',
         image: item.film?.filmPosterUrl || '/image/10.svg',
+        eventId: item.event_id?.toString() ?? '',
+        filmId: item.film_id?.toString() ?? '',
       };
     };
     const allSubs = Array.isArray(data.submissions)
@@ -65,19 +70,90 @@ async function fetchSubmissions(): Promise<Submission[]> {
   }
 }
 
-export default function SubmissionsTableSection() {
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
+type SubmissionsTableSectionProps = {
+  submissions: Submission[];
+  loading: boolean;
+  onAwardsMapChange?: (awardsMap: Record<string, string[]>) => void;
+};
+
+function getTotalAwards(awardsMap: Record<string, string[]>): number {
+  return Object.values(awardsMap).reduce((sum, awards) => sum + (awards?.length || 0), 0);
+}
+
+export default function SubmissionsTableSection({ submissions, loading, onAwardsMapChange }: SubmissionsTableSectionProps) {
   const [selected, setSelected] = useState<Submission | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const previouslyFocused = useRef<Element | null>(null);
+  const [awardsMap, setAwardsMap] = useState<Record<string, string[]>>({}); // key: submission.id, value: awards
 
+  // Fetch awards for all unique eventIds in submissions
   useEffect(() => {
-    fetchSubmissions().then((data) => {
-      setSubmissions(data);
-      setLoading(false);
-    });
-  }, []);
+    // Debug: log eventId and filmId for each submission
+    if (submissions && submissions.length > 0) {
+      console.log('Submissions eventId/filmId mapping:');
+      submissions.forEach((s) => {
+        console.log(`Submission id=${s.id}, eventId=${s.eventId}, filmId=${s.filmId}`);
+      });
+    }
+    async function fetchAwards() {
+      const eventFilmPairs = submissions
+        .filter(s => s.eventId && s.filmId)
+        .map(s => ({ eventId: s.eventId, filmId: s.filmId, submissionId: s.id }));
+      const uniqueEvents = Array.from(new Set(eventFilmPairs.map(p => p.eventId)));
+      const newAwardsMap: Record<string, string[]> = {};
+      for (const eventId of uniqueEvents) {
+        try {
+          const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+          if (!token) {
+            console.warn('[SubmissionsTableSection] No token, skipping event', eventId);
+            continue;
+          }
+          const url = `https://filmly-backend.vercel.app/api/events/${eventId}/winners`;
+          console.log('[SubmissionsTableSection] Fetching awards for eventId:', eventId, 'URL:', url);
+          const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          });
+          console.log(`[SubmissionsTableSection] Response status for eventId ${eventId}:`, res.status);
+          if (res.status === 404) {
+            console.warn(`[SubmissionsTableSection] No winners found for eventId=${eventId} (404)`);
+            eventFilmPairs.filter(p => p.eventId === eventId).forEach(pair => {
+              newAwardsMap[pair.submissionId] = [];
+            });
+            continue;
+          }
+          if (!res.ok) {
+            console.warn(`[SubmissionsTableSection] Error fetching winners for eventId=${eventId} (status ${res.status})`);
+            continue;
+          }
+          const data = await res.json();
+          console.log(`[SubmissionsTableSection] Fetched winners for eventId=${eventId}:`, data.winners);
+          for (const pair of eventFilmPairs.filter(p => p.eventId === eventId)) {
+            const awards = Array.isArray(data.winners)
+              ? data.winners
+                  .filter((w: any) => {
+                    const isUserFilm = String(w.filmId) === String(pair.filmId);
+                    const hasCategory = typeof w.category === 'string' && w.category.trim() !== '';
+                    if (isUserFilm && hasCategory) {
+                      console.log(`[SubmissionsTableSection] User award found: eventId=${eventId}, filmId=${w.filmId}, category=${w.category}`);
+                    }
+                    return isUserFilm && hasCategory;
+                  })
+                  .map((w: any) => w.category || '-')
+              : [];
+            newAwardsMap[pair.submissionId] = awards.length > 0 ? awards : [];
+          }
+        } catch (e) {
+          console.error('[SubmissionsTableSection] Error fetching winners for eventId', eventId, e);
+        }
+      }
+      setAwardsMap(newAwardsMap);
+      if (onAwardsMapChange) onAwardsMapChange(newAwardsMap);
+    }
+    if (submissions && submissions.length > 0) {
+      fetchAwards();
+    }
+  }, [submissions]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -109,15 +185,16 @@ export default function SubmissionsTableSection() {
                 <th className="px-6 py-3 text-left text-[#3B3B3B] font-semibold sticky top-0 z-10 bg-[#F4F7F6]">Festival</th>
                 <th className="px-6 py-3 text-left text-[#3B3B3B] font-semibold sticky top-0 z-10 bg-[#F4F7F6]">Submission Status</th>
                 <th className="px-6 py-3 text-left text-[#3B3B3B] font-semibold sticky top-0 z-10 bg-[#F4F7F6]">Judging Status</th>
+                <th className="px-6 py-3 text-left text-[#3B3B3B] font-semibold sticky top-0 z-10 bg-[#F4F7F6]">Award</th>
                 <th className="px-6 py-3 text-left text-[#3B3B3B] font-semibold sticky top-0 z-10 bg-[#F4F7F6]">Comments</th>
               </tr>
             </thead>
 
             <tbody className="bg-white">
               {loading ? (
-                <tr><td colSpan={5} className="text-center py-8 text-[#8A8A8A]">Loading...</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-[#8A8A8A]">Loading...</td></tr>
               ) : submissions.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-8 text-[#8A8A8A]">No submissions found.</td></tr>
+                <tr><td colSpan={6} className="text-center py-8 text-[#8A8A8A]">No submissions found.</td></tr>
               ) : (
                 submissions.map((row, idx) => (
                   <tr
@@ -142,6 +219,22 @@ export default function SubmissionsTableSection() {
                         ? <JudgingBadge status={row.judgingStatus} />
                         : <span className="text-[#8A8A8A]">-</span>}
                     </td>
+                    <td className="px-6 py-4 align-top">
+                      {awardsMap[row.id] && awardsMap[row.id].length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {awardsMap[row.id].map((award, i) => (
+                            <span
+                              key={i}
+                              className="inline-block bg-[#E9F5EE] text-[#43B26C] px-2 py-1 rounded text-xs font-medium border border-[#C7E8D7] mr-1 mb-1"
+                            >
+                              {award}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[#8A8A8A]">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 align-top text-sm text-[#616161] max-w-[380px] break-words">{row.comments}</td>
                   </tr>
                 ))
@@ -154,62 +247,55 @@ export default function SubmissionsTableSection() {
       {/* Modal centered in middle of screen */}
       {selected && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8"
           role="dialog"
           aria-modal="true"
           aria-labelledby="submission-detail-title"
         >
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSelected(null)} aria-hidden="true" />
-
-          <div className="relative z-10 max-w-[1100px] w-full">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="flex flex-col md:flex-row">
-                {/* left: details — scrollable if content grows */}
-                <div className="flex-1 p-6 overflow-auto max-h-[70vh]">
-                  <div className="flex items-start justify-between">
-                    <h3 id="submission-detail-title" className="text-lg font-semibold text-[#0B3F20]">Submission Detail</h3>
-                    <button
-                      ref={closeButtonRef}
-                      onClick={() => setSelected(null)}
-                      aria-label="Close submission detail"
-                      className="ml-4 rounded-md px-3 py-1 text-sm text-[#4B4B4B] hover:bg-[#F4F4F4]"
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <div className="mt-4 rounded-md border border-[#EDEDED] bg-white p-4 shadow-sm">
-                    <table className="w-full text-sm">
-                      <thead className="text-left sticky top-0 bg-white">
-                        <tr className="text-[#6B6B6B]">
-                          <th className="py-2">Film</th>
-                          <th className="py-2">Festival</th>
-                          <th className="py-2">Event Date</th>
-                          <th className="py-2">Judging Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="py-4 w-1/4">{selected.film}</td>
-                          <td className="py-4 w-1/4 text-[#4D4D4D]">{selected.festival}</td>
-                          <td className="py-4 w-1/6">{selected.eventDate ?? '-'}</td>
-                          <td className="py-4 w-1/4">
-                            {selected.judgingStatus && selected.judgingStatus !== '-' ? <JudgingBadge status={selected.judgingStatus} /> : <span className="text-[#8A8A8A]">-</span>}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-
-                    <div className="mt-4 text-sm text-[#616161]">
-                      <strong>Comments:</strong>
-                      <p className="mt-1 whitespace-pre-wrap">{selected.comments}</p>
-                    </div>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200" onClick={() => setSelected(null)} aria-hidden="true" />
+          <div className="relative z-10 w-full max-w-3xl">
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-[#EDEDED] flex flex-col md:flex-row">
+              {/* Poster/image section */}
+              <div className="w-full md:w-1/3 bg-gradient-to-b from-[#F4F7F6] to-white flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[#F0F0F0]">
+                <img
+                  src={selected.image ?? '/image/10.svg'}
+                  alt={`${selected.film} poster`}
+                  className="max-h-[320px] w-auto rounded-lg shadow-md object-contain border border-[#EDEDED] bg-white"
+                />
+              </div>
+              {/* Details section */}
+              <div className="flex-1 flex flex-col p-6 md:p-8 relative">
+                <button
+                  ref={closeButtonRef}
+                  onClick={() => setSelected(null)}
+                  aria-label="Close submission detail"
+                  className="absolute top-4 right-4 rounded-full w-9 h-9 flex items-center justify-center text-xl text-[#4B4B4B] hover:bg-[#F4F4F4] focus:outline-none focus:ring-2 focus:ring-[#43B26C]"
+                >
+                  ×
+                </button>
+                <h3 id="submission-detail-title" className="text-2xl font-bold text-[#0B3F20] mb-2">{selected.film}</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="inline-block bg-[#F4F7F6] text-[#2D6A4F] px-3 py-1 rounded-full text-xs font-semibold">{selected.festival}</span>
+                  <span className="inline-block bg-[#F4F7F6] text-[#616161] px-3 py-1 rounded-full text-xs">{selected.eventDate ?? '-'}</span>
+                  {selected.judgingStatus && selected.judgingStatus !== '-' ? (
+                    <JudgingBadge status={selected.judgingStatus} />
+                  ) : (
+                    <span className="inline-block bg-[#F4F7F6] text-[#8A8A8A] px-3 py-1 rounded-full text-xs">No Judging Status</span>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <div className="text-sm font-semibold text-[#2D6A4F] mb-1">Award(s)</div>
+                  <div className="text-base text-[#222] min-h-[24px]">
+                    {awardsMap[selected.id] && awardsMap[selected.id].length > 0
+                      ? awardsMap[selected.id].map((award, i) => (
+                          <span key={i} className="inline-block bg-[#E9F5EE] text-[#43B26C] px-2 py-1 rounded mr-2 mb-1 text-xs font-medium border border-[#C7E8D7]">{award}</span>
+                        ))
+                      : <span className="text-[#8A8A8A]">-</span>}
                   </div>
                 </div>
-
-                {/* right: poster/image */}
-                <div className="w-full md:w-[300px] p-6 border-t md:border-t-0 md:border-l border-[#F0F0F0] flex items-center justify-center bg-white">
-                  <img src={selected.image ?? '/image/10.svg'} alt={`${selected.film} poster`} className="max-h-[60vh] object-contain" />
+                <div className="mb-2">
+                  <div className="text-sm font-semibold text-[#616161] mb-1">Comments</div>
+                  <div className="text-base text-[#444] whitespace-pre-wrap min-h-[24px]">{selected.comments || <span className="text-[#8A8A8A]">No comments</span>}</div>
                 </div>
               </div>
             </div>
@@ -219,7 +305,6 @@ export default function SubmissionsTableSection() {
     </>
   );
 }
-
 
 function SubmissionBadge({ status }: { status: 'Accepted' | 'Rejected' }) {
   if (status === 'Accepted') return <span className="inline-flex items-center px-3 py-1 rounded text-xs font-medium bg-[#43B26C] text-white">Accept</span>;
