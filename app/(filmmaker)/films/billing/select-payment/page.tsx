@@ -73,7 +73,7 @@ export default function SelectPaymentPage() {
       localStorage.setItem('payment_method', method);
 
       // Redirect to payment page
-      router.push(`/organizer/subscription/payment?transactionId=${data.transactionId}&method=${method}`);
+      router.push(`/films/billing/payment?transactionId=${data.transactionId}&method=${method}`);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -137,7 +137,7 @@ export default function SelectPaymentPage() {
         )}
 
         <button
-          onClick={() => router.push('/organizer/subscription')}
+          onClick={() => router.push('/films/billing')}
           disabled={loading}
           className="w-full mt-6 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
         >

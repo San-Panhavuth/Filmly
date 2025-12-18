@@ -24,6 +24,7 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const roles = useAuthStore((s) => s.roles);
   const email = useAuthStore((s) => s.userEmail);
+  const user = useAuthStore((s) => s.user);
   const activeRole = useAuthStore((s) => s.activeRole);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -40,15 +41,17 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
   // Redirect based on authentication and role
   React.useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-    
-    // If not authenticated, redirect to login
     if (!token) {
       router.push('/login');
       return;
     }
-    
-    // Only redirect if user is NOT a filmmaker
-    if (activeRole && activeRole !== 'filmmaker') {
+    // Allow access to billing/select-payment and billing/payment for subscription flow
+    const allowedPaths = ['/films/billing/select-payment', '/films/billing/payment'];
+    if (
+      activeRole &&
+      activeRole !== 'filmmaker' &&
+      !allowedPaths.some((p) => window.location.pathname.startsWith(p))
+    ) {
       window.location.href = activeRole === 'organizer' ? '/organizer' : '/choose-role';
     }
   }, [activeRole, router]);
@@ -101,12 +104,12 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
             title="View Profile"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00441B] text-white text-xs font-semibold">
-              {email ? email.substring(0, 2).toUpperCase() : 'FM'}
+              {(user && user.name) ? user.name.substring(0, 2).toUpperCase() : (email ? email.substring(0, 2).toUpperCase() : 'FM')}
             </div>
             {!collapsed && (
               <div className="leading-tight">
                 <div className="text-sm font-semibold text-[#0C0C0C]">
-                  {email || 'John Doe'}
+                  {(user && user.name) ? user.name : (email || 'John Doe')}
                 </div>
                 <div className="text-xs text-[#6F6F6F]">
                   {activeRole || 'Filmmaker'}
@@ -119,10 +122,10 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
               <button
                 onClick={() => {
                   // Switch to organizer role and redirect
-                  const { userEmail, roles = [] } = useAuthStore.getState();
+                  const { userEmail, roles = [], user } = useAuthStore.getState();
                   if (!userEmail) return;
                   const newRoles = roles.includes('organizer') ? roles : [...roles, 'organizer'];
-                  useAuthStore.getState().setUser(userEmail, newRoles, 'organizer');
+                  useAuthStore.getState().setUser(userEmail, newRoles, 'organizer', user);
                   window.location.href = '/organizer/dashboard';
                 }}
                 className="flex items-center gap-2 rounded-md border border-[#EDEDED] px-3 py-2 text-sm text-[#1A1A1A] hover:bg-[#F6F6F6] w-full"

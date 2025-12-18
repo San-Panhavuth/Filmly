@@ -86,7 +86,7 @@ function PaymentContent() {
       
       if (data.success || data.message === 'Payment successful') {
         alert('✅ Card payment successful!');
-        router.push('/organizer/subscription');
+        router.push('/films/billing');
       } else {
         setError('Payment processing failed: ' + (data.error || 'Unknown error'));
       }
@@ -135,7 +135,7 @@ function PaymentContent() {
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
-            onClick={() => router.push('/organizer/subscription')}
+            onClick={() => router.push('/films/billing')}
             className="px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-colors"
           >
             Back to Subscription
@@ -148,7 +148,7 @@ function PaymentContent() {
   // QR Code Payment
   if (paymentMethod === 'qr' && paymentData?.qrImage) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">$10.00 USD</h1>
           <p className="text-gray-600 mb-6">Premium Subscription - 30 Days</p>
@@ -166,7 +166,7 @@ function PaymentContent() {
           </p>
 
           <button
-            onClick={() => router.push('/organizer/subscription')}
+            onClick={() => router.push('/films/billing')}
             className="w-full py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg transition-colors"
           >
             Cancel
@@ -268,7 +268,7 @@ function PaymentContent() {
 
           <button
             type="button"
-            onClick={() => router.push('/organizer/subscription')}
+            onClick={() => router.push('/films/billing')}
             disabled={processingCard}
             className="w-full py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
           >
@@ -283,8 +283,8 @@ function PaymentContent() {
 export default function PaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#0C4A2A] to-[#065F46] flex items-center justify-center">
-        <div className="text-center text-white">
+      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+        <div className="text-center text-gray-700">
           <div className="text-5xl mb-4">⏳</div>
           <h2>Loading payment...</h2>
         </div>

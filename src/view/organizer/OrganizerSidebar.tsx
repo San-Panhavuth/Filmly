@@ -14,10 +14,12 @@ const nav = [
 	{ href: '/organizer/subscription', label: 'Subscription', icon: <FiCreditCard size={18} /> },
 ];
 
+
 export default function OrganizerSidebar() {
 	const pathname = usePathname() ?? '';
 	const router = useRouter();
 	const email = useAuthStore((s) => s.userEmail);
+	const user = useAuthStore((s) => s.user);
 	const activeRole = useAuthStore((s) => s.activeRole);
 	const [collapsed, setCollapsed] = useState(false);
 
@@ -87,30 +89,30 @@ export default function OrganizerSidebar() {
 					title="View Profile"
 				>
 					<div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00441B] text-white text-xs font-semibold">
-						{email ? email.substring(0, 2).toUpperCase() : 'OR'}
-					</div>
-					{!collapsed && (
-						<div className="leading-tight">
-							<div className="text-sm font-semibold text-[#0C0C0C]">
-								{email || 'Organizer'}
-							</div>
-							<div className="text-xs text-[#6F6F6F]">
-								{activeRole || 'Organizer'}
-							</div>
-						</div>
-					)}
+            {(user && user.name) ? user.name.substring(0, 2).toUpperCase() : (email ? email.substring(0, 2).toUpperCase() : 'OR')}
+          </div>
+          {!collapsed && (
+            <div className="leading-tight">
+              <div className="text-sm font-semibold text-[#0C0C0C]">
+                {(user && user.name) ? user.name : (email || 'Organizer')}
+              </div>
+              <div className="text-xs text-[#6F6F6F]">
+                {activeRole || 'Organizer'}
+              </div>
+            </div>
+          )}
 				</div>
 				{!collapsed && (
 					<div className="mt-3 flex flex-col gap-2 w-full">
 						<button
-							onClick={() => {
-								// Switch to filmmaker role and redirect
-								const { userEmail, roles = [] } = useAuthStore.getState();
-								if (!userEmail) return;
-								const newRoles = roles.includes('filmmaker') ? roles : [...roles, 'filmmaker'];
-								useAuthStore.getState().setUser(userEmail, newRoles, 'filmmaker');
-								router.push('/films');
-							}}
+								onClick={() => {
+									// Switch to filmmaker role and redirect
+									const { userEmail, roles = [], user } = useAuthStore.getState();
+									if (!userEmail) return;
+									const newRoles = roles.includes('filmmaker') ? roles : [...roles, 'filmmaker'];
+									useAuthStore.getState().setUser(userEmail, newRoles, 'filmmaker', user);
+									router.push('/films');
+								}}
 							className="flex items-center gap-2 rounded-md border border-[#EDEDED] px-3 py-2 text-sm text-[#1A1A1A] hover:bg-[#F6F6F6] w-full"
 						>
 							<FiAward className="h-4 w-4 text-[#2F623F]" />

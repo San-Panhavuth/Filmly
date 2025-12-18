@@ -52,4 +52,3 @@ export default function OrganizerDashboard() {
   );
 }
 
-useAuthStore.getState().setUser('user@email.com', ['organizer', 'filmmaker']);
