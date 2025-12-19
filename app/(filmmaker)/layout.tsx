@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../../src/shared/store/authStore';
@@ -22,7 +23,7 @@ const nav: NavItem[] = [
 export default function FilmmakerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
-  const roles = useAuthStore((s) => s.roles);
+  // const roles = useAuthStore((s) => s.roles);
   const email = useAuthStore((s) => s.userEmail);
   const user = useAuthStore((s) => s.user);
   const activeRole = useAuthStore((s) => s.activeRole);
@@ -64,7 +65,7 @@ export default function FilmmakerLayout({ children }: { children: React.ReactNod
         {/* Header/Logo/Toggle */}
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <img src="/Icon.svg" alt="Filmly logo" className="h-8 w-8 rounded-md object-cover" />
+            <Image src="/Icon.svg" alt="Filmly logo" width={32} height={32} className="h-8 w-8 rounded-md object-cover" priority />
             {!collapsed && <span className="text-sm font-semibold text-[#00441B]">Filmly</span>}
           </div>
           <button

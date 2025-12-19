@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 // We import the type from the parent to fix the build errors
 import { Submission } from './SubmissionsPageWithFilters';
 
@@ -66,16 +67,17 @@ export default function SubmissionsTableSection({
 
           const data = await res.json();
           console.log(`[SubmissionsTableSection] Fetched winners for eventId=${eventId}:`, data.winners);
-          
+
+          type Winner = { filmId: string | number; category?: string };
           for (const pair of eventFilmPairs.filter(p => p.eventId === eventId)) {
             const awards = Array.isArray(data.winners)
-              ? data.winners
-                  .filter((w: any) => {
+              ? (data.winners as Winner[])
+                  .filter((w: Winner) => {
                     const isUserFilm = String(w.filmId) === String(pair.filmId);
                     const hasCategory = typeof w.category === 'string' && w.category.trim() !== '';
                     return isUserFilm && hasCategory;
                   })
-                  .map((w: any) => w.category || '-')
+                  .map((w: Winner) => w.category || '-')
               : [];
             newAwardsMap[pair.submissionId] = awards.length > 0 ? awards : [];
           }
@@ -152,7 +154,7 @@ export default function SubmissionsTableSection({
                     <td className="px-6 py-4 align-top text-[#4D4D4D] max-w-[240px] break-words">{row.festival}</td>
                     <td className="px-6 py-4 align-top"><SubmissionBadge status={row.submissionStatus} /></td>
                     <td className="px-6 py-4 align-top">
-                      {row.submissionStatus === 'Accepted' && row.judgingStatus && row.judgingStatus !== '' && row.judgingStatus !== '-' ? (
+                      {row.submissionStatus === 'Accepted' && row.judgingStatus && row.judgingStatus !== '-' ? (
                         <JudgingBadge status={row.judgingStatus} />
                       ) : (
                         <span className="text-[#8A8A8A]">-</span>
@@ -187,10 +189,14 @@ export default function SubmissionsTableSection({
           <div className="relative z-10 w-full max-w-3xl">
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-[#EDEDED] flex flex-col md:flex-row">
               <div className="w-full md:w-1/3 bg-gradient-to-b from-[#F4F7F6] to-white flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[#F0F0F0]">
-                <img
+                <Image
                   src={selected.image || '/image/10.svg'}
                   alt={`${selected.film} poster`}
+                  width={240}
+                  height={320}
                   className="max-h-[320px] w-auto rounded-lg shadow-md object-contain border border-[#EDEDED] bg-white"
+                  style={{ width: 'auto', height: '320px' }}
+                  priority
                 />
               </div>
               <div className="flex-1 flex flex-col p-6 md:p-8 relative">
@@ -237,7 +243,7 @@ function SubmissionBadge({ status }: { status: 'Accepted' | 'Rejected' }) {
 }
 
 function JudgingBadge({ status }: { status: Submission['judgingStatus'] }) {
-  if (!status || status === '' || status === '-') return null;
+  if (!status || status === '-') return null;
   const colors: Record<string, string> = {
     'Under Review': 'bg-[#4285F4]',
     'Shortlist': 'bg-[#FBC02D]',

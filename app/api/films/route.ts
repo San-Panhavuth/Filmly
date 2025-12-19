@@ -31,8 +31,10 @@ export async function POST(req: NextRequest) {
       data = await backendRes.text();
     }
     return NextResponse.json(data, { status: backendRes.status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Failed to create film' }, { status: 500 });
+  } catch (e: unknown) {
+    let message = 'Failed to create film';
+    if (e instanceof Error) message = e.message;
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 import { NextRequest, NextResponse } from 'next/server';
@@ -52,7 +54,9 @@ export async function GET(req: NextRequest) {
     });
     const data = await backendRes.json();
     return NextResponse.json(data, { status: backendRes.status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Failed to fetch films' }, { status: 500 });
+  } catch (e: unknown) {
+    let message = 'Failed to fetch films';
+    if (e instanceof Error) message = e.message;
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -13,7 +13,7 @@ export default function MatchingPage() {
       <div>
         <h3 className="text-base font-semibold text-[#00441B] mb-2">Your Projects</h3>
         <p className="text-sm text-[#6F6F6F] mb-4">
-          Select a film and click "AI matching" to find festivals that match your project's theme, language, and other criteria.
+          Select a film and click &quot;AI matching&quot; to find festivals that match your project&apos;s theme, language, and other criteria.
         </p>
         <MatchingTableSection />
       </div>

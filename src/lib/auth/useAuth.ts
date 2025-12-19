@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../shared/store/authStore';
 import { initializeAuth } from './authHelpers';
@@ -12,26 +12,25 @@ export function useAuth(requireAuth: boolean = false) {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const didInit = useRef(false);
 
   useEffect(() => {
+    let ignore = false;
     const init = async () => {
       // Check if auth is initialized
       const hasToken = checkAuth();
-      
-      if (hasToken && !user) {
-        // Token exists but user data not loaded, initialize
+      if (hasToken && !user && !didInit.current) {
+        didInit.current = true;
         await initializeAuth();
       }
-      
-      setLoading(false);
-      
+      if (!ignore) setLoading(false);
       // Redirect if auth is required but user is not authenticated
       if (requireAuth && !hasToken) {
         router.push('/login');
       }
     };
-
     init();
+    return () => { ignore = true; };
   }, [requireAuth, router, user, checkAuth]);
 
   return {
@@ -54,17 +53,15 @@ export function useRequireAuth() {
 export function useRedirectIfAuthenticated(redirectTo: string = '/choose-role') {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const hasAuth = checkAuth();
-    
     if (hasAuth) {
       router.push(redirectTo);
-    } else {
-      setLoading(false);
     }
+    // No setState needed; if not authenticated, just stay on page
   }, [isAuthenticated, router, redirectTo, checkAuth]);
 
-  return { loading };
+  // No loading state needed for this redirect logic
+  return {};
 }

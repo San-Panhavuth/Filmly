@@ -31,9 +31,16 @@ const barOptions = {
   maintainAspectRatio: false,
 };
 
-export default function PieChartSection({ analytics }: { analytics: any }) {
-  const submissionsByGenre = analytics?.submissionsByGenre || {};
-  const submissionsByStatus = analytics?.submissionsByStatus || {};
+export default function PieChartSection({ analytics }: { analytics: unknown }) {
+  const getObj = (key: string) => {
+    if (analytics && typeof analytics === 'object' && analytics !== null && key in analytics) {
+      const value = (analytics as Record<string, unknown>)[key];
+      return (typeof value === 'object' && value !== null) ? value as Record<string, number> : {};
+    }
+    return {};
+  };
+  const submissionsByGenre = getObj('submissionsByGenre');
+  const submissionsByStatus = getObj('submissionsByStatus');
 
   const genreLabels = Object.keys(submissionsByGenre);
   const genreData = Object.values(submissionsByGenre) as number[];

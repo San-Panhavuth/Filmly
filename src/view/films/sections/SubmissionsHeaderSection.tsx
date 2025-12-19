@@ -1,17 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useAuthStore } from '../../../stores/authStore';
+// Removed unused useAuthStore import
 
 export default function SubmissionsHeaderSection() {
-  const email = useAuthStore((s) => s.userEmail);
-  const initials =
-    (email || 'John Doe')
-      .split('@')[0]
-      .split(' ')
-      .map((p) => p[0]?.toUpperCase())
-      .slice(0, 2)
-      .join('') || 'JD';
+  // Removed unused 'email' variable
+  // Removed unused 'initials' variable
 
   return (
     <section className="rounded-xl border border-[#EDEDED] bg-white px-4 py-4 shadow-sm md:px-6 md:py-5 w-full">

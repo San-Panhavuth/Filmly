@@ -3,10 +3,12 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
+import Image from 'next/image';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function PaymentContent() {
-  const [paymentData, setPaymentData] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'card'>('qr');
@@ -90,7 +92,7 @@ function PaymentContent() {
       } else {
         setError('Payment processing failed: ' + (data.error || 'Unknown error'));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError('Failed to process card payment: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setProcessingCard(false);
@@ -154,9 +156,11 @@ function PaymentContent() {
           <p className="text-gray-600 mb-6">Premium Subscription - 30 Days</p>
 
           <div className="bg-white p-4 rounded-lg inline-block shadow-md mb-6">
-            <img
-              src={paymentData.qrImage}
+            <Image
+              src={typeof paymentData.qrImage === 'string' ? paymentData.qrImage : ''}
               alt="Payment QR Code"
+              width={256}
+              height={256}
               className="w-64 h-64 object-contain"
             />
           </div>

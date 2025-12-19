@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 type Film = {
   id: number;
   uid?: number;
-  genre?: any[];
+  genre?: string[];
   title: string;
   s3_link?: string | null;
   duration?: number | null;
@@ -16,7 +16,7 @@ type Film = {
 type Event = {
   id: number;
   uid?: number;
-  genre?: any[];
+  genre?: string[];
   title: string;
   deadline?: string;
   duration?: number;
@@ -44,14 +44,7 @@ type Submission = {
   filmId?: number;
 };
 
-function countAwards(submissions: Submission[]) {
-  let count = 0;
-  if (!Array.isArray(submissions)) return 0;
-  submissions.forEach((s) => {
-    if (s.awards && s.awards !== '-' && s.awards !== '') count++;
-  });
-  return count;
-}
+// Removed unused countAwards function
 
 export default function StatsSection() {
   const [films, setFilms] = useState<Film[]>([]);
@@ -81,9 +74,9 @@ export default function StatsSection() {
         setSubmissions(submissionsData);
 
         // 3. Collect all user's film IDs
-        const userFilmIds = new Set(filmsData.map(f => String(f.id)));
+        const userFilmIds = new Set(filmsData.map((f: Film) => String(f.id)));
         // 4. Collect all unique event IDs from submissions
-        const uniqueEvents = Array.from(new Set(submissionsData.map(s => s.event_id)));
+        const uniqueEvents = Array.from(new Set(submissionsData.map((s: Submission) => s.event_id)));
         let totalAwards = 0;
         for (const eventId of uniqueEvents) {
           if (!eventId) continue;
@@ -95,12 +88,12 @@ export default function StatsSection() {
           const data = await res.json();
           if (Array.isArray(data.winners)) {
             totalAwards += data.winners.filter(
-              (w: any) => userFilmIds.has(String(w.filmId)) && typeof w.category === 'string' && w.category.trim() !== ''
+              (w: { filmId: number; category?: string }) => userFilmIds.has(String(w.filmId)) && typeof w.category === 'string' && w.category.trim() !== ''
             ).length;
           }
         }
         setAwardsCount(Number.isFinite(totalAwards) ? totalAwards : 0);
-      } catch (e) {
+      } catch {
         setError('Error fetching stats');
       }
       setLoading(false);

@@ -1,38 +1,57 @@
+
 import React from 'react';
 
+// Move Festival type to top-level
+export type Festival = {
+  id?: number;
+  title?: string;
+  description?: string;
+  location?: string;
+  createdAt?: string;
+  language?: string;
+  duration?: number;
+  deadline?: string;
+  genre?: string[];
+  website?: string;
+  contactEmail?: string;
+  country?: string;
+  languages?: string[];
+};
+
 interface FestivalDetailCardProps {
-  festival: any; // Backend event object
+  festival: unknown; // Backend event object
   onClose: () => void;
   onDelete?: (eventId: number) => void;
 }
 
 export default function FestivalDetailCard({ festival, onClose, onDelete }: FestivalDetailCardProps) {
-  // Map backend data to display format
+  // Use the top-level Festival type for type assertion
+  const fest: Festival = (festival && typeof festival === 'object') ? festival as Festival : {};
   const modal = {
-    name: festival.title || 'Untitled Festival',
-    theme: festival.description || 'No theme provided',
-    about: festival.description || 'No description available',
-    location: festival.location || 'Not specified',
-    festivalDates: festival.createdAt ? `Created: ${new Date(festival.createdAt).toLocaleDateString()}` : 'N/A',
-    language: festival.language || 'Not specified',
-    duration: festival.duration ? `${festival.duration} minutes` : 'Not specified',
-    deadline: festival.deadline ? new Date(festival.deadline).toLocaleDateString() : 'No deadline set',
-    genres: festival.genre || [],
-    website: festival.website || null,
-    contactEmail: festival.contactEmail || null,
-    country: festival.country || null,
-    languages: festival.languages || null,
+    name: fest.title || 'Untitled Festival',
+    theme: fest.description || 'No theme provided',
+    about: fest.description || 'No description available',
+    location: fest.location || 'Not specified',
+    festivalDates: fest.createdAt ? `Created: ${new Date(fest.createdAt).toLocaleDateString()}` : 'N/A',
+    language: fest.language || 'Not specified',
+    duration: fest.duration ? `${fest.duration} minutes` : 'Not specified',
+    deadline: fest.deadline ? new Date(fest.deadline).toLocaleDateString() : 'No deadline set',
+    genres: fest.genre || [],
+    website: fest.website || null,
+    contactEmail: fest.contactEmail || null,
+    country: fest.country || null,
+    languages: fest.languages || null,
     stats: {
       submissions: 0, // Would need to fetch from submissions API
       filmmakers: 0,
       awards: 0,
-      complete: new Date(festival.deadline) < new Date(),
+      complete: fest.deadline ? new Date(fest.deadline) < new Date() : false,
     },
   };
 
   const handleDelete = () => {
-    if (onDelete) {
-      onDelete(festival.id);
+    if (onDelete && fest.id != null) {
+      onDelete(fest.id);
     }
   };
   return (
@@ -43,7 +62,7 @@ export default function FestivalDetailCard({ festival, onClose, onDelete }: Fest
         {/* Theme Banner */}
         <div className="bg-gradient-to-r from-[#0B4C2F] to-[#17613B] py-10 px-8 text-center rounded-t-2xl flex flex-col items-center">
           <div className="text-white text-lg mb-2 tracking-wide uppercase font-semibold">Theme</div>
-          <div className="text-white text-3xl font-extrabold italic">“{modal.theme}”</div>
+          <div className="text-white text-3xl font-extrabold italic">“{modal.theme.replace(/'/g, '&apos;')}”</div>
         </div>
         {/* Main Content */}
         <div className="flex flex-col md:flex-row gap-10 px-10 py-10">
@@ -55,7 +74,7 @@ export default function FestivalDetailCard({ festival, onClose, onDelete }: Fest
                 <>
                   There are things we sense but never speak, shadows hiding behind everyday smiles.<br />
                   Sometimes the smallest detail reveals everything we tried to ignore.<br />
-                  Follow the path of what's hidden, whispered, or half-forgotten.<br />
+                  Follow the path of what&apos;s hidden, whispered, or half-forgotten.<br />
                   Let your film uncover what people rarely dare to face.
                 </>
               )}
@@ -129,7 +148,7 @@ export default function FestivalDetailCard({ festival, onClose, onDelete }: Fest
                 <div className="text-xs text-[#6B7280] font-semibold">Language</div>
                 <div className="text-[#17613B] font-medium text-base truncate max-w-[180px]">
                   {(() => {
-                    let langs = [];
+                    let langs: string[] = [];
                     if (Array.isArray(modal.language)) langs = modal.language;
                     else if (modal.language) langs = [modal.language];
                     if (modal.languages && Array.isArray(modal.languages)) langs = langs.concat(modal.languages);

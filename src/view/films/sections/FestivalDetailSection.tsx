@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { formatDate } from './utils/formatDate';
 import { useRouter } from 'next/navigation';
 
 // optional helper — safe require so file still works if festivals.data isn't present
 
-async function fetchFestival(id: string) {
+interface FestivalApiResponse {
+  event?: Record<string, unknown>;
+}
+async function fetchFestival(id: string): Promise<Record<string, unknown> | null> {
   try {
     const res = await fetch(`/api/events/${id}`);
     if (!res.ok) throw new Error('Failed to fetch event');
-    const data = await res.json();
-    return data.event;
+    const data: FestivalApiResponse = await res.json();
+    return data.event ?? null;
   } catch {
     return null;
   }
@@ -19,28 +23,32 @@ async function fetchFestival(id: string) {
 
 
 export default function FestivalDetailSection({ id }: { id: string }) {
-  const [festival, setFestival] = useState<any | null>(null);
+  const [festival, setFestival] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    setError(null);
-    fetchFestival(id)
-      .then((data) => {
-        if (mounted) {
-          if (data) setFestival(data);
-          else setError('Festival not found');
+    const fetchData = async () => {
+      if (!mounted) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchFestival(id);
+        if (!mounted) return;
+        if (data) {
+          setFestival(data);
+        } else {
+          setError('Festival not found');
         }
-      })
-      .catch(() => {
+      } catch {
         if (mounted) setError('Failed to fetch festival');
-      })
-      .finally(() => {
+      } finally {
         if (mounted) setLoading(false);
-      });
+      }
+    };
+    fetchData();
     return () => {
       mounted = false;
     };
@@ -71,19 +79,19 @@ export default function FestivalDetailSection({ id }: { id: string }) {
   // Map Supabase event fields to UI fields
   const mappedFestival = festival
     ? {
-        id: festival.id,
-        name: festival.title || festival.name || 'Untitled Festival',
-        about: festival.description || '',
-        aboutShort: festival.aboutShort || '',
-        theme: festival.theme || '',
-        location: festival.location || '',
-        dates: festival.dates || '',
-        language: festival.language || '',
-        duration: festival.duration || '',
-        deadline: festival.deadline || '',
-        contact: festival.contact || '',
-        image: festival.image || '/image%202.svg',
-        pastWinners: festival.pastWinners || [],
+        id: festival.id as string,
+        name: (festival.title as string) || (festival.name as string) || 'Untitled Festival',
+        about: (festival.description as string) || '',
+        aboutShort: (festival.aboutShort as string) || '',
+        theme: (festival.theme as string) || '',
+        location: (festival.location as string) || '',
+        dates: (festival.dates as string) || '',
+        language: (festival.language as string) || '',
+        duration: (festival.duration as string) || '',
+        deadline: (festival.deadline as string) || '',
+        contact: (festival.contact as string) || '',
+        image: (festival.image as string) || '/image%202.svg',
+        pastWinners: (festival.pastWinners as unknown as Array<{ title: string; place: string; director: string; year: string }>) || [],
       }
     : fallbackFestival;
 
@@ -118,7 +126,7 @@ export default function FestivalDetailSection({ id }: { id: string }) {
               </div>
               <div className="flex items-center justify-end">
                 <div className="w-44 h-44 bg-[#F3F4F6] rounded-md flex items-center justify-center overflow-hidden">
-                  <img src={mappedFestival.image} alt={`${mappedFestival.name} poster`} className="object-cover w-full h-full" />
+                  <Image src={mappedFestival.image} alt={`${mappedFestival.name} poster`} className="object-cover w-full h-full" width={176} height={176} />
                 </div>
               </div>
             </div>
@@ -201,7 +209,7 @@ export default function FestivalDetailSection({ id }: { id: string }) {
         <section className="bg-white rounded-lg border border-[#E6E6E6] shadow-sm p-8 min-h-[10rem]">
           <h4 className="text-[#0D4A2B] font-semibold mb-6">Past Winners & Laureates</h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {(mappedFestival.pastWinners ?? []).map((w: any, i: number) => (
+            {(mappedFestival.pastWinners ?? []).map((w: { title: string; place: string; director: string; year: string }, i: number) => (
               <div key={i} className="rounded border p-4 bg-white">
                 <div className="h-36 bg-[#F3F4F6] rounded mb-3 flex items-center justify-center">🎞️</div>
                 <div className="text-sm font-medium">{w.title}</div>

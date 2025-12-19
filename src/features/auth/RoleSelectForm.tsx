@@ -8,7 +8,6 @@ export default function RoleSelectForm() {
   const [role, setRole] = useState<'filmmaker' | 'organizer' | null>(null);
   const router = useRouter();
   const email = useAuthStore((s) => s.userEmail);
-  const activeRole = useAuthStore((s) => s.activeRole);
 
   // Remove auto-redirect on mount to allow explicit navigation only after user chooses
 

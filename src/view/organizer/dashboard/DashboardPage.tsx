@@ -9,7 +9,7 @@ import TableSection from './sections/TableSection';
 import { getOrganizerAnalytics } from '@/api/organizerApi';
 
 export default function DashboardPage() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -19,9 +19,10 @@ export default function DashboardPage() {
         setLoading(true);
         const data = await getOrganizerAnalytics();
         setAnalytics(data);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError(err.message || 'Failed to load analytics');
+        const errorMsg = (typeof err === 'object' && err && 'message' in err) ? (err as { message?: string }).message : undefined;
+        setError(errorMsg || 'Failed to load analytics');
       } finally {
         setLoading(false);
       }

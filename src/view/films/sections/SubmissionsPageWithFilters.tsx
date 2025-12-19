@@ -45,7 +45,16 @@ export default function SubmissionsPageWithFilters() {
         }
         const data = await res.json();
         
-        const mapSubmission = (item: any): Submission => {
+        type RawSubmission = {
+          id?: string | number;
+          film?: { title?: string; id?: string | number; filmPosterUrl?: string };
+          event?: { title?: string; id?: string | number; deadline?: string };
+          event_id?: string | number;
+          film_id?: string | number;
+          submission_status?: string;
+          comments?: string;
+        };
+        const mapSubmission = (item: RawSubmission): Submission => {
           let submissionStatus: 'Accepted' | 'Rejected' = 'Rejected';
           let judgingStatus: Submission['judgingStatus'] = '';
           
@@ -82,7 +91,7 @@ export default function SubmissionsPageWithFilters() {
           ? data.submissions.map(mapSubmission)
           : [];
         setSubmissions(allSubs);
-      } catch (e) {
+      } catch {
         setSubmissions([]);
       } finally {
         setLoading(false);

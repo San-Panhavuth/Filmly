@@ -93,12 +93,14 @@ export default function CreateFestivalPage() {
         try {
           const uploadResponse = await uploadEventImage(response.event.id, form.logo);
           console.log('Logo uploaded successfully:', uploadResponse);
-        } catch (uploadError: any) {
+        } catch (uploadError) {
           logoUploadSuccess = false;
           console.error('Failed to upload logo, but event was created:', uploadError);
-          console.error('Upload error details:', uploadError.message);
+          // Type guard for error with message
+          const uploadErrorMsg = (typeof uploadError === 'object' && uploadError && 'message' in uploadError) ? (uploadError as { message?: string }).message : undefined;
+          console.error('Upload error details:', uploadErrorMsg);
           // Show warning but don't block success
-          alert(`Event created successfully, but logo upload failed: ${uploadError.message}\n\nYou can try uploading the logo again from the event details page.`);
+          alert(`Event created successfully, but logo upload failed: ${uploadErrorMsg}\n\nYou can try uploading the logo again from the event details page.`);
         }
       } else {
         console.log('No logo to upload or event ID missing', { 
@@ -117,11 +119,13 @@ export default function CreateFestivalPage() {
         router.push('/organizer/my');
       }, 2000);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error('=== ERROR CREATING FESTIVAL ===');
       console.error('Error details:', err);
-      console.error('Error message:', err.message);
-      setError(err.message || 'Failed to create festival. Please try again.');
+      // Type guard for error with message
+      const errorMsg = (typeof err === 'object' && err && 'message' in err) ? (err as { message?: string }).message : undefined;
+      console.error('Error message:', errorMsg);
+      setError(errorMsg || 'Failed to create festival. Please try again.');
     } finally {
       setLoading(false);
       console.log('Loading state set to false');
@@ -163,8 +167,8 @@ export default function CreateFestivalPage() {
               <input type="text" placeholder="e.g., New York Independent Film Festival" className="w-full border rounded px-3 py-2 bg-gray-50" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-              <select className="w-full border rounded px-3 py-2 bg-gray-50" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))}>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <select id="country" title="Country" className="w-full border rounded px-3 py-2 bg-gray-50" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))}>
                 <option value="">Select country</option>
                 {countries.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -172,8 +176,8 @@ export default function CreateFestivalPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Language *</label>
-              <select className="w-full border rounded px-3 py-2 bg-gray-50" value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
+              <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">Language *</label>
+              <select id="language" title="Language" className="w-full border rounded px-3 py-2 bg-gray-50" value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
                 <option value="">Select language</option>
                 {languages.map((l) => (
                   <option key={l} value={l}>{l}</option>
@@ -181,8 +185,8 @@ export default function CreateFestivalPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
-              <input type="date" className="w-full border rounded px-3 py-2 bg-gray-50" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} />
+              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
+              <input id="deadline" type="date" className="w-full border rounded px-3 py-2 bg-gray-50" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} placeholder="Select deadline" title="Deadline" />
             </div>
           </div>
           {/* Duration */}

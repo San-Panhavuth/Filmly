@@ -1,17 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import FestivalsGrid from './FestivalsGrid';
-import FestivalCard from './FestivalCard';
-import { usePaginated } from './hooks/usePaginated';
-import { Festival } from './festivals.types';
-import { formatDate } from './utils/formatDate';
 
 
 type Event = {
   id: string;
   name: string;
-  category?: string;
-  country?: string;
-  deadline?: string;
+  category: string;
+  country: string;
+  deadline: string;
 };
 
 
@@ -31,14 +27,22 @@ export default function FestivalSection() {
         if (!res.ok) throw new Error('Failed to fetch events');
         const data = await res.json();
         // Map backend fields to frontend Event type
+        type BackendEvent = {
+          id: string;
+          title: string;
+          genre?: string[] | string;
+          location?: string;
+          deadline?: string;
+        };
         const mappedEvents = Array.isArray(data.events)
-          ? data.events.map((e: any) => ({
+          ? data.events.map((e: BackendEvent) => ({
               id: e.id,
-              name: e.title, // backend 'title' -> frontend 'name'
-              category: Array.isArray(e.genre) ? e.genre.join(', ') : e.genre, // genre array to string
-              country: e.location, // backend 'location' -> frontend 'country'
-              deadline: e.deadline,
-              // add other fields if needed
+              name: e.title,
+              category: Array.isArray(e.genre)
+                ? e.genre.join(', ')
+                : (typeof e.genre === 'string' ? e.genre : ''),
+              country: e.location ?? '',
+              deadline: e.deadline ?? '',
             }))
           : [];
         setEvents(mappedEvents);
@@ -98,6 +102,7 @@ export default function FestivalSection() {
             value={country}
             onChange={(e) => setCountry(e.target.value)}
             className="mt-2 md:mt-0 md:ml-3 w-full md:w-44 rounded-md border border-[#E6E6E6] px-3 py-2 text-sm"
+            title="Country Filter"
           >
             <option value="">Country</option>
             {countries.map((c) => (
@@ -109,6 +114,7 @@ export default function FestivalSection() {
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             className="mt-2 md:mt-0 md:ml-3 w-full md:w-40 rounded-md border border-[#E6E6E6] px-3 py-2 text-sm"
+            title="Duration Filter"
           >
             <option value="">Durations</option>
             <option value="short">Short</option>
@@ -121,7 +127,7 @@ export default function FestivalSection() {
           <div className="text-sm text-[#2F623F]">Showing <span className="font-medium">{filtered.length}</span> festivals</div>
 
           <div>
-            <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="rounded-md border border-[#E6E6E6] px-3 py-2 text-sm">
+            <select value={sort} onChange={(e) => setSort(e.target.value as 'deadline' | 'name')} className="rounded-md border border-[#E6E6E6] px-3 py-2 text-sm" title="Sort Festivals">
               <option value="deadline">Sort by Deadline</option>
               <option value="name">Sort by Name</option>
             </select>
@@ -134,7 +140,7 @@ export default function FestivalSection() {
         {loading ? (
           <div className="text-center text-[#6F6F6F] py-12">Loading events...</div>
         ) : (
-          <FestivalsGrid festivals={filtered as any} />
+          <FestivalsGrid festivals={filtered} />
         )}
       </div>
     </div>

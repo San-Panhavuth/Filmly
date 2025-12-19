@@ -91,7 +91,7 @@ export async function getCurrentUser(accessToken?: string) {
   return data;
 }
 
-export async function updateProfile(profile: any, accessToken?: string) {
+export async function updateProfile(profile: unknown, accessToken?: string) {
   const token = accessToken || localStorage.getItem('access_token');
   
   if (!token) {

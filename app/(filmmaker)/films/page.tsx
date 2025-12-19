@@ -2,7 +2,7 @@
 
 // Welcome Header
 // (This will be rendered inside the component below)
-import HeaderSection from '../../../src/view/films/sections/HeaderSection';
+// import HeaderSection from '../../../src/view/films/sections/HeaderSection';
 import StatsSection from '../../../src/view/films/sections/StatsSection';
 import AnalyticsSection from '../../../src/view/films/sections/AnalyticsSection';
 import ActiveSubmissionsSection from '../../../src/view/films/sections/ActiveSubmissionsSection';

@@ -24,8 +24,12 @@ export default function ForgotPasswordForm() {
     try {
       await passwordApi.requestPasswordReset(email);
       setSent(true);
-    } catch (err: any) {
-      setErr(err.message || 'Failed to send reset email');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErr(err.message);
+      } else {
+        setErr('Failed to send reset email');
+      }
     }
     setLoading(false);
   }

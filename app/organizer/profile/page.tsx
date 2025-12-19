@@ -1,12 +1,24 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+
 import OrganizerProfileView from '../../../src/view/organizer/profile/OrganizerProfileView';
 import { getCurrentUser } from '../../../src/api/authApi';
 
+interface OrganizerProfile {
+  name: string;
+  role: string;
+  bio: string;
+  email: string;
+  country: string;
+  contact: string;
+  organization: string;
+  social: string;
+}
+
 export default function OrganizerProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<OrganizerProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -24,8 +36,12 @@ export default function OrganizerProfilePage() {
           organization: res.user.organization || '',
           social: res.user.social || '',
         });
-      } catch (err: any) {
-        setError(err.message || 'Failed to load user');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Failed to load user');
+        }
       }
       setLoading(false);
     };

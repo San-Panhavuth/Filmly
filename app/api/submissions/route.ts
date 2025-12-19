@@ -28,9 +28,11 @@ export async function POST(request: NextRequest) {
     console.log('Backend response status:', backendRes.status);
     console.log('Backend response data:', data);
     return NextResponse.json(data, { status: backendRes.status });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Error submitting to festival:', e);
-    return NextResponse.json({ error: e.message || 'Failed to submit film to festival' }, { status: 500 });
+    let message = 'Failed to submit film to festival';
+    if (e instanceof Error) message = e.message;
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 // route.ts

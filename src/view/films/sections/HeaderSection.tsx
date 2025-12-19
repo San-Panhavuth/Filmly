@@ -1,6 +1,5 @@
+
 'use client';
-
-
 import React, { useEffect, useState } from 'react';
 
 type Film = {
@@ -12,26 +11,30 @@ type Film = {
   duration?: number;
 };
 
-export default function HeaderSection() {
+type UserProfile = {
+  full_name?: string;
+  email?: string;
+  // Add other fields if needed
+};
+
+export default function HeaderSection({ user_profile }: { user_profile?: UserProfile }) {
   const [films, setFilms] = useState<Film[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-  type UserProfile = {
-    full_name?: string;
-    email?: string;
-    // Add other fields if needed
-  };
-        const res = await fetch('/api/films', {
-  // Accept user_profile as a prop for consistency with profile view
-  export default function HeaderSection({ user_profile }: { user_profile: UserProfile }) {
-        });
+    async function fetchFilms() {
+      try {
+        const res = await fetch('/api/films');
         if (!res.ok) throw new Error('Failed to fetch films');
         const data = await res.json();
         setFilms(Array.isArray(data.films) ? data.films : []);
-      } catch (e: any) {
-        setError(e.message || 'Error fetching films');
+      } catch (e) {
+        if (e instanceof Error) {
+          setError(e.message || 'Error fetching films');
+        } else {
+          setError('Error fetching films');
+        }
       }
       setLoading(false);
     }
@@ -42,7 +45,7 @@ export default function HeaderSection() {
     <div className="mb-6">
       <h1 className="text-2xl font-bold text-[#0C0C0C] mb-1">My Films</h1>
       <div className="mb-2 text-lg font-semibold text-[#00441B]">
-        Welcome back,<br />
+        Welcome back{user_profile?.full_name ? `, ${user_profile.full_name}` : ''}<br />
         <span className="text-sm font-normal text-gray-600">This is your filmmaker dashboard.</span>
       </div>
       <p className="text-sm text-gray-500 mb-4">Manage your submitted films and add new ones.</p>

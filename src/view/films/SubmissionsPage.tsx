@@ -2,18 +2,31 @@
 
 'use client';
 
+
 import React, { useEffect, useState } from 'react';
 import SubmissionsFiltersSection from '@/view/films/sections/SubmissionsFiltersSection';
 import SubmissionsTableSection from '@/view/films/sections/SubmissionsTableSection';
 
+import type { Submission } from '@/view/films/sections/SubmissionsPageWithFilters';
+
+// Type for the raw API response
+type RawSubmission = {
+  id?: string | number;
+  film?: { title?: string; id?: string; filmPosterUrl?: string };
+  event?: { title?: string; id?: string; deadline?: string };
+  submission_status?: string;
+  comments?: string;
+};
+
+
+
 export default function SubmissionsPage() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<RawSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
   const [judgingFilter, setJudgingFilter] = useState('All');
 
   useEffect(() => {
-    // Fetch submissions using the same logic as in SubmissionsTableSection
     async function fetchSubmissions() {
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       if (!token) return setSubmissions([]);
@@ -31,9 +44,8 @@ export default function SubmissionsPage() {
 
   // Filtering logic
   const filtered = submissions.filter((item) => {
-    // Map status for filtering
-    let submissionStatus = 'Rejected';
-    let judgingStatus = '';
+    let submissionStatus: Submission['submissionStatus'] = 'Rejected';
+    let judgingStatus: Submission['judgingStatus'] = '';
     if (item.submission_status === 'accept') {
       submissionStatus = 'Accepted';
     } else if (item.submission_status === 'reject') {
@@ -48,16 +60,14 @@ export default function SubmissionsPage() {
       submissionStatus = 'Accepted';
       judgingStatus = 'Nominee';
     }
-    // Filter logic
     const statusMatch = statusFilter === 'All' || submissionStatus === statusFilter;
     const judgingMatch = judgingFilter === 'All' || judgingStatus === judgingFilter;
     return statusMatch && judgingMatch;
   });
 
-  // Map to the shape expected by SubmissionsTableSection
-  const mapped = filtered.map((item) => {
-    let submissionStatus = 'Rejected';
-    let judgingStatus = '';
+  const mapped: Submission[] = filtered.map((item) => {
+    let submissionStatus: Submission['submissionStatus'] = 'Rejected';
+    let judgingStatus: Submission['judgingStatus'] = '';
     if (item.submission_status === 'accept') {
       submissionStatus = 'Accepted';
     } else if (item.submission_status === 'reject') {
@@ -81,6 +91,8 @@ export default function SubmissionsPage() {
       judgingStatus,
       comments: item.comments || '',
       image: item.film?.filmPosterUrl || '/image/10.svg',
+      eventId: item.event?.id ?? '',
+      filmId: item.film?.id ?? '',
     };
   });
 

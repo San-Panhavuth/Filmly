@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import FestivalDetailCard from './FestivalDetailCard';
 import { getMyEvents, deleteEvent, getEventImages } from '@/api/organizerApi';
 import { useRouter } from 'next/navigation';
@@ -10,18 +11,15 @@ export default function MyFestivalPage() {
   const router = useRouter();
   const [selected, setSelected] = useState('All Festivals');
   const [page, setPage] = useState(1);
-  const [selectedFestival, setSelectedFestival] = useState(null as any);
-  const [festivals, setFestivals] = useState<any[]>([]);
+  const [selectedFestival, setSelectedFestival] = useState<unknown | null>(null);
+  const [festivals, setFestivals] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [eventImages, setEventImages] = useState<Record<number, string>>({});
 
-  useEffect(() => {
-    fetchFestivals();
-  }, [page]);
 
-  const fetchFestivals = async () => {
+  const fetchFestivals = useCallback(async () => {
     try {
       setLoading(true);
       const offset = (page - 1) * PAGE_SIZE;
@@ -33,26 +31,35 @@ export default function MyFestivalPage() {
       // Fetch images for each event
       const imageMap: Record<number, string> = {};
       await Promise.all(
-        events.map(async (event: any) => {
-          try {
-            const imagesResponse = await getEventImages(event.id);
-            if (imagesResponse.images && imagesResponse.images.length > 0) {
-              // Use the first image as the thumbnail
-              imageMap[event.id] = imagesResponse.images[0].imageLink;
+        events.map(async (event: unknown) => {
+          if (event && typeof event === 'object' && event !== null && 'id' in event) {
+            try {
+              const eventId = (event as { id: number }).id;
+              const imagesResponse = await getEventImages(eventId);
+              if (imagesResponse.images && imagesResponse.images.length > 0) {
+                // Use the first image as the thumbnail
+                imageMap[eventId] = imagesResponse.images[0].imageLink;
+              }
+            } catch (imgErr) {
+              console.error(`Failed to fetch images for event`, imgErr);
             }
-          } catch (imgErr) {
-            console.error(`Failed to fetch images for event ${event.id}:`, imgErr);
           }
         })
       );
       setEventImages(imageMap);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching festivals:', err);
-      setError(err.message || 'Failed to load festivals');
+      const errorMsg = (typeof err === 'object' && err && 'message' in err) ? (err as { message?: string }).message : undefined;
+      setError(errorMsg || 'Failed to load festivals');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    fetchFestivals();
+  }, [fetchFestivals]);
+
 
   const handleDelete = async (eventId: number) => {
     if (!confirm('Are you sure you want to delete this festival?')) {
@@ -64,8 +71,9 @@ export default function MyFestivalPage() {
       // Refresh the list
       fetchFestivals();
       setSelectedFestival(null);
-    } catch (err: any) {
-      alert('Failed to delete festival: ' + err.message);
+    } catch (err) {
+      const errorMsg = (typeof err === 'object' && err && 'message' in err) ? (err as { message?: string }).message : undefined;
+      alert('Failed to delete festival: ' + (errorMsg || 'Unknown error'));
     }
   };
 
@@ -115,11 +123,16 @@ export default function MyFestivalPage() {
           className="border rounded-lg px-4 py-2 bg-gray-50 text-gray-800 min-w-[220px] shadow-sm"
           value={selected}
           onChange={e => setSelected(e.target.value)}
+          title="Festival Filter"
         >
           <option value="all">All Festivals</option>
-          {festivals.map(f => (
-            <option key={f.id} value={f.id}>{f.title}</option>
-          ))}
+          {festivals.map(f => {
+            if (f && typeof f === 'object' && f !== null && 'id' in f && 'title' in f) {
+              const fest = f as { id: number | string; title: string };
+              return <option key={fest.id} value={fest.id}>{fest.title}</option>;
+            }
+            return null;
+          })}
         </select>
       </div>
       {/* Recent Festivals Grid */}
@@ -127,33 +140,41 @@ export default function MyFestivalPage() {
         <h2 className="text-green-900 font-semibold text-base mb-4">All Your Festivals</h2>
         {festivals.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-            {festivals.map((fest) => (
-              <div
-                key={fest.id}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col aspect-square overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedFestival(fest)}
-              >
-                <div className="bg-gray-100 flex items-center justify-center w-full h-1/2 min-h-[80px] overflow-hidden">
-                  {eventImages[fest.id] ? (
-                    <img 
-                      src={eventImages[fest.id]} 
-                      alt={fest.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl text-gray-400">🎬</span>
-                  )}
-                </div>
-                <div className="px-4 py-3 flex-1 flex flex-col justify-end">
-                  <div className="font-medium text-gray-900 mb-1 truncate" title={fest.title}>
-                    {fest.title}
+            {festivals.map((fest) => {
+              if (fest && typeof fest === 'object' && fest !== null && 'id' in fest && 'title' in fest) {
+                const f = fest as { id: number; title: string; deadline?: string };
+                return (
+                  <div
+                    key={f.id}
+                    className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col aspect-square overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedFestival(f)}
+                  >
+                    <div className="bg-gray-100 flex items-center justify-center w-full h-1/2 min-h-[80px] overflow-hidden">
+                      {eventImages[f.id] ? (
+                        <Image
+                          src={eventImages[f.id]}
+                          alt={f.title}
+                          className="w-full h-full object-cover"
+                          width={300}
+                          height={150}
+                        />
+                      ) : (
+                        <span className="text-2xl text-gray-400">🎬</span>
+                      )}
+                    </div>
+                    <div className="px-4 py-3 flex-1 flex flex-col justify-end">
+                      <div className="font-medium text-gray-900 mb-1 truncate" title={f.title}>
+                        {f.title}
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        Deadline: {f.deadline ? new Date(f.deadline).toLocaleDateString() : 'N/A'}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-gray-500 text-sm">
-                    Deadline: {fest.deadline ? new Date(fest.deadline).toLocaleDateString() : 'N/A'}
-                  </div>
-                </div>
-              </div>
-            ))}
+                );
+              }
+              return null;
+            })}
           </div>
         ) : (
           <div className="text-center py-12 bg-gray-50 rounded-lg">

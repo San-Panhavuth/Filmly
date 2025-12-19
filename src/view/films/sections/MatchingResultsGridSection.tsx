@@ -19,7 +19,6 @@ type Props = {
   matches: Match[];         // already paged items to render
   boxWidth: string;
   boxHeight: string;
-  columns: number;
   gapPx: number;
 };
 
@@ -27,8 +26,7 @@ export default function MatchingResultsGridSection({
   matches = [],
   boxWidth = '220px',
   boxHeight = '220px',
-  columns = 3,
-  gapPx = 16,
+  gapPx = 16
 }: Props) {
   const router = useRouter();
 
@@ -66,9 +64,6 @@ export default function MatchingResultsGridSection({
     setPage((p) => Math.min(effectiveTotalPages, p + 1));
   }
 
-  function handleAddFilm() {
-    router.push('/films/add');
-  }
 
   return (
     <div className="w-full">

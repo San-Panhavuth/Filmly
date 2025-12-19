@@ -5,10 +5,11 @@ import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 
 export default function AuthPage() {
   const router = useRouter()
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<Session | null>(null)
 
   useEffect(() => {
     // Check if user is already signed in

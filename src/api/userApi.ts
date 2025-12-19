@@ -2,7 +2,7 @@
 // Helper to fetch user profile by user ID (returns email)
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function getUserProfileById(userId, accessToken) {
+export async function getUserProfileById(userId: string, accessToken?: string) {
   const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);
   if (!token) throw new Error('No access token available');
   const res = await fetch(`${API_URL}/api/user-profile?id=${userId}`, {

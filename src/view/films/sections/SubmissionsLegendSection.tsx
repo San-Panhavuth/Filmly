@@ -18,10 +18,10 @@ export default function SubmissionsLegendSection() {
 
       <ul className="list-disc pl-5 text-sm text-[#4B4B4B] space-y-1">
         <li><strong>Accept / Reject:</strong> The festival notifies the filmmaker as either Accept or Reject.</li>
-        <li><strong>Under Review:</strong> After an Accept, the submission moves to "Under Review" for judging.</li>
+        <li><strong>Under Review:</strong> After an Accept, the submission moves to &quot;Under Review&quot; for judging.</li>
         <li><strong>Shortlist:</strong> A shortlisted film is considered for a main or special award.</li>
         <li><strong>Nominee:</strong> Nominee indicates official selection for an award category (congrats).</li>
-        <li><strong>Winner / Award:</strong> If selected, a specific award label (e.g. "Best Director") will appear.</li>
+        <li><strong>Winner / Award:</strong> If selected, a specific award label (e.g. &quot;Best Director&quot;) will appear.</li>
       </ul>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-[#1A1A1A]">

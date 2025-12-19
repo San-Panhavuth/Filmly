@@ -7,32 +7,60 @@ const GENRES = [
   'Traditional', 'Western', 'Horror', 'Animation', 'Thriller', 'Adventure', 'Science Fiction', 'Musical',
 ];
 
+interface Film {
+  id: string;
+  title: string;
+  country: string;
+  duration: string;
+  genre: string;
+  language: string;
+  theme: string;
+  synopsis: string;
+  year: string;
+}
+
 export default function EditFilmPage({ params }: { params: { id: string } }) {
-  const [film, setFilm] = useState<any>(null);
+  const [film, setFilm] = useState<Film | null>(null);
 
   useEffect(() => {
-    const films = JSON.parse(localStorage.getItem('mock_films') || '[]');
-    const found = films.find((f: any) => f.id === params.id);
-    setFilm(found || {
-      id: params.id,
-      title: '',
-      country: '',
-      duration: '',
-      genre: '',
-      language: '',
-      theme: '',
-      synopsis: '',
-      year: '',
+    const films: Film[] = JSON.parse(localStorage.getItem('mock_films') || '[]');
+    const found = films.find((f) => f.id === params.id);
+    Promise.resolve().then(() => {
+      setFilm(
+        found || {
+          id: params.id,
+          title: '',
+          country: '',
+          duration: '',
+          genre: '',
+          language: '',
+          theme: '',
+          synopsis: '',
+          year: '',
+        }
+      );
     });
   }, [params.id]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    setFilm({ ...film, [e.target.name]: e.target.value });
+    if (!film) return;
+    setFilm({
+      id: film.id,
+      title: e.target.name === 'title' ? e.target.value : film.title,
+      country: e.target.name === 'country' ? e.target.value : film.country,
+      duration: e.target.name === 'duration' ? e.target.value : film.duration,
+      genre: e.target.name === 'genre' ? e.target.value : film.genre,
+      language: e.target.name === 'language' ? e.target.value : film.language,
+      theme: e.target.name === 'theme' ? e.target.value : film.theme,
+      synopsis: e.target.name === 'synopsis' ? e.target.value : film.synopsis,
+      year: e.target.name === 'year' ? e.target.value : film.year,
+    });
   }
 
   function saveEdit() {
-    const films = JSON.parse(localStorage.getItem('mock_films') || '[]');
-    const idx = films.findIndex((f: any) => f.id === film.id);
+    if (!film) return;
+    const films: Film[] = JSON.parse(localStorage.getItem('mock_films') || '[]');
+    const idx = films.findIndex((f) => f.id === film.id);
     if (idx >= 0) {
       films[idx] = film;
     } else {
@@ -55,6 +83,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.title}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter film title"
         />
       </div>
       <div className="mb-4">
@@ -64,6 +93,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.year || ''}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter year"
         />
       </div>
       <div className="mb-4">
@@ -73,6 +103,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.country}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter country"
         />
       </div>
       <div className="mb-4">
@@ -82,6 +113,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.duration}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter duration (e.g. 90 min)"
         />
       </div>
       <div className="mb-4">
@@ -91,6 +123,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.genre}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          title="Select genre"
         >
           <option value="">Select genre</option>
           {GENRES.map((g) => (
@@ -105,6 +138,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.language}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter language"
         />
       </div>
       <div className="mb-4">
@@ -114,6 +148,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.theme}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter theme"
         />
       </div>
       <div className="mb-4">
@@ -123,6 +158,7 @@ export default function EditFilmPage({ params }: { params: { id: string } }) {
           value={film.synopsis}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+          placeholder="Enter synopsis"
         />
       </div>
       <button

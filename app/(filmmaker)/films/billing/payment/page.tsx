@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+interface PaymentData {
+  qrImage?: string;
+  // Add other properties as needed
+}
+
 function PaymentContent() {
-  const [paymentData, setPaymentData] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'qr' | 'card'>('qr');
@@ -154,11 +160,16 @@ function PaymentContent() {
           <p className="text-gray-600 mb-6">Premium Subscription - 30 Days</p>
 
           <div className="bg-white p-4 rounded-lg inline-block shadow-md mb-6">
-            <img
-              src={paymentData.qrImage}
-              alt="Payment QR Code"
-              className="w-64 h-64 object-contain"
-            />
+            {paymentData.qrImage && (
+              <Image
+                src={paymentData.qrImage}
+                alt="Payment QR Code"
+                width={256}
+                height={256}
+                className="w-64 h-64 object-contain"
+                priority
+              />
+            )}
           </div>
 
           <p className="text-sm text-gray-600 mb-6">

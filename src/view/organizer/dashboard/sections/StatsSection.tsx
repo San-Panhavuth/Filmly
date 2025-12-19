@@ -12,7 +12,7 @@ function DashboardHeader() {
 				</p>
 			</div>
 			<div className="mt-4 md:mt-0">
-				<select className="border rounded-lg px-4 py-2 bg-white text-gray-800 min-w-[180px] shadow-sm">
+				<select className="border rounded-lg px-4 py-2 bg-white text-gray-800 min-w-[180px] shadow-sm" title="Festival Filter">
 					<option>All Festivals</option>
 				</select>
 			</div>
@@ -20,48 +20,61 @@ function DashboardHeader() {
 	);
 }
 
-export default function StatsSection({ analytics }: { analytics: any }) {
-	const stats = [
-		{
-			label: 'Total Submissions',
-			value: analytics?.totalSubmissions || 0,
-			icon: <FiFilm size={24} className="text-green-900" />,
-			sub: 'All festivals combined',
-		},
-		{
-			label: 'Total Nominee',
-			value: analytics?.totalNominees || 0,
-			icon: <FiUsers size={24} className="text-green-900" />,
-			sub: 'Reviewed submissions',
-		},
-		{
-			label: 'Awards Given',
-			value: analytics?.totalAwardsGiven || 0,
-			icon: <FiAward size={24} className="text-green-900" />,
-			sub: 'Across all festivals',
-		},
-	];
+export default function StatsSection({ analytics }: { analytics: unknown }) {
+	const getValue = (key: string, defaultValue = 0): string | number => {
+		if (analytics && typeof analytics === 'object' && analytics !== null && key in analytics) {
+			const value = (analytics as Record<string, unknown>)[key];
+			if (typeof value === 'string' || typeof value === 'number') {
+				return value;
+			}
+			if (typeof value === 'boolean') {
+				return value ? 1 : 0;
+			}
+			return defaultValue;
+		}
+		return defaultValue;
+	};
+  const stats = [
+    {
+      label: 'Total Submissions',
+      value: getValue('totalSubmissions'),
+      icon: <FiFilm size={24} className="text-green-900" />,
+      sub: 'All festivals combined',
+    },
+    {
+      label: 'Total Nominee',
+      value: getValue('totalNominees'),
+      icon: <FiUsers size={24} className="text-green-900" />,
+      sub: 'Reviewed submissions',
+    },
+    {
+      label: 'Awards Given',
+      value: getValue('totalAwardsGiven'),
+      icon: <FiAward size={24} className="text-green-900" />,
+      sub: 'Across all festivals',
+    },
+  ];
 
-	return (
-		<>
-			<DashboardHeader />
-			<section className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-				{stats.map((s) => (
-					<div
-						key={s.label}
-						className="bg-white rounded-xl shadow p-6 flex flex-col gap-2 min-w-[220px]"
-					>
-						<div className="flex items-center justify-between">
-							<span className="text-gray-700 font-medium text-base">
-								{s.label}
-							</span>
-							<span className="bg-gray-100 rounded p-1">{s.icon}</span>
-						</div>
-						<div className="text-green-900 text-2xl font-bold">{s.value}</div>
-						<div className="text-gray-400 text-sm">{s.sub}</div>
-					</div>
-				))}
-			</section>
-		</>
-	);
+  return (
+    <>
+      <DashboardHeader />
+      <section className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="bg-white rounded-xl shadow p-6 flex flex-col gap-2 min-w-[220px]"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700 font-medium text-base">
+                {s.label}
+              </span>
+              <span className="bg-gray-100 rounded p-1">{s.icon}</span>
+            </div>
+            <div className="text-green-900 text-2xl font-bold">{String(s.value)}</div>
+            <div className="text-gray-400 text-sm">{s.sub}</div>
+          </div>
+        ))}
+      </section>
+    </>
+  );
 }

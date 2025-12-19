@@ -22,10 +22,10 @@ export async function POST(request: Request) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: Record<string, unknown>) {
             cookieStore.set({ name, value, ...options })
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: Record<string, unknown>) {
             cookieStore.delete({ name, ...options })
           },
         },
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       message: 'Password reset email sent successfully',
       data,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

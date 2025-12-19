@@ -34,7 +34,14 @@ async function fetchFilmsFromBackend(): Promise<Film[]> {
 
     const data = await response.json();
     const films = data.films || [];
-    return films.map((film: any) => ({
+    return films.map((film: {
+      id: string | number;
+      title: string;
+      createdAt?: string;
+      language?: string;
+      theme?: string;
+      description?: string;
+    }) => ({
       id: film.id,
       title: film.title,
       year: film.createdAt ? new Date(film.createdAt).getFullYear().toString() : undefined,

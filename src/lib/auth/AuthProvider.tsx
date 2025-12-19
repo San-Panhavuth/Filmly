@@ -3,16 +3,14 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { initializeAuth } from './authHelpers';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [initialized, setInitialized] = useState(false);
-
   useEffect(() => {
     // Initialize auth on mount
     initializeAuth().finally(() => {
-      setInitialized(true);
+      // Initialization complete
     });
   }, []);
 

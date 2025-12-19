@@ -24,7 +24,14 @@ async function fetchActiveSubmissions(): Promise<Submission[]> {
     if (!res.ok) return [];
     const data = await res.json();
     // Map backend fields to Submission type (snake_case from API)
-    const mapSubmission = (item: any): Submission => {
+    interface ApiSubmission {
+      id?: string | number;
+      film?: { title?: string };
+      event?: { title?: string };
+      submission_status?: string;
+      comments?: string;
+    }
+    const mapSubmission = (item: ApiSubmission): Submission => {
       let submissionStatus: 'Accepted' | 'Rejected' | 'None' = 'None';
       let judgingStatus: 'Under Review' | 'Shortlist' | 'Nominee' | '' = '';
       if (item.submission_status === 'accept') {
@@ -54,7 +61,7 @@ async function fetchActiveSubmissions(): Promise<Submission[]> {
       ? data.submissions.map(mapSubmission)
       : [];
     // Only show active (not accepted/rejected) submissions
-    return allSubs.filter((s) => s.submissionStatus === 'None');
+    return allSubs.filter((s: Submission) => s.submissionStatus === 'None');
   } catch (e) {
     console.error('Error fetching active submissions:', e);
     return [];
@@ -99,7 +106,7 @@ export default function ActiveSubmissionsSection() {
                   <td className="px-6 py-4 align-top max-w-[260px] break-words">{row.film}</td>
                   <td className="px-6 py-4 align-top text-[#4D4D4D] max-w-[240px] break-words">{row.festival}</td>
                   <td className="px-6 py-4 align-top">
-                    {row.judgingStatus && row.judgingStatus !== ''
+                    {row.judgingStatus
                       ? <JudgingBadge status={row.judgingStatus} />
                       : <span className="text-[#8A8A8A]">None</span>}
                   </td>

@@ -1,13 +1,12 @@
 'use client';
 
-import { useRouter, useSearchParams, useParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Brand from '../../components/Brand';
 import * as passwordApi from '../../api/passwordApi';
 
 export default function ResetPasswordForm() {
   const router = useRouter();
-  const params = useSearchParams();
   const routeParams = useParams<{ locale?: string }>();
   const locale = typeof routeParams?.locale === 'string' ? routeParams.locale : undefined;
 
@@ -38,17 +37,19 @@ export default function ResetPasswordForm() {
       if (!accessToken) throw new Error('Invalid or missing reset link.');
       if (!pw1 || !pw2) throw new Error('All fields required.');
       if (pw1 !== pw2) throw new Error('Passwords do not match.');
-      
       // Use the passwordApi
       await passwordApi.resetPassword(pw1, accessToken, refreshToken);
-      
       setSuccess(true);
       setTimeout(() => {
         const target = '/password-changed';
         router.push(locale ? `/${locale}${target}` : target);
       }, 1200);
-    } catch (err: any) {
-      setErr(err.message || 'Failed to reset password');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErr(err.message);
+      } else {
+        setErr('Failed to reset password');
+      }
     }
     setLoading(false);
   }
@@ -79,6 +80,8 @@ export default function ResetPasswordForm() {
                     value={pw1}
                     onChange={e => setPw1(e.target.value)}
                     required
+                    title="New password"
+                    placeholder="Enter new password"
                   />
                 </div>
                 <div>
@@ -89,6 +92,8 @@ export default function ResetPasswordForm() {
                     value={pw2}
                     onChange={e => setPw2(e.target.value)}
                     required
+                    title="Confirm new password"
+                    placeholder="Re-enter new password"
                   />
                 </div>
                 {err && <p className="text-[11px] text-red-600">{err}</p>}

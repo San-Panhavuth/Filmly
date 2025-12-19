@@ -11,13 +11,11 @@ type Role = 'filmmaker' | 'organizer';
 
 interface AuthFormProps {
   mode: Mode;
-  hideRole?: boolean;
 }
 
-export default function AuthForm({ mode, hideRole }: AuthFormProps) {
+export default function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
-
-  const [role, setRole] = useState<Role>('filmmaker');
+  const [role] = useState<Role>('filmmaker');
   const [name, setName] = useState('');
   const [org, setOrg] = useState('');
   const [email, setEmail] = useState('');
@@ -55,8 +53,12 @@ export default function AuthForm({ mode, hideRole }: AuthFormProps) {
         );
         router.push('/choose-role');
       }
-    } catch (err: any) {
-      setErr(err.message || 'Authentication failed.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErr(err.message);
+      } else {
+        setErr('Authentication failed.');
+      }
     }
     setLoading(false);
   };
@@ -66,15 +68,7 @@ export default function AuthForm({ mode, hideRole }: AuthFormProps) {
       {/* Logo row (Assuming Icon.svg is available) */}
       <div className="flex items-center justify-center gap-2">
         <span
-          className="h-6 w-6 bg-[#00441B]"
-          style={{
-            WebkitMaskImage: 'url(/Icon.svg)',
-            maskImage: 'url(/Icon.svg)',
-            WebkitMaskRepeat: 'no-repeat',
-            maskRepeat: 'no-repeat',
-            WebkitMaskSize: 'contain',
-            maskSize: 'contain',
-          }}
+          className="h-6 w-6 bg-[#00441B] mask-icon"
           aria-hidden
         />
         <span className="text-sm font-semibold text-[#00441B]">Filmly</span>
@@ -131,6 +125,7 @@ export default function AuthForm({ mode, hideRole }: AuthFormProps) {
               value={country}
               onChange={e => setCountry(e.target.value)}
               required
+              title="Select country"
             >
               <option value="">Select country</option>
               <option value="US">United States</option>
@@ -158,7 +153,7 @@ export default function AuthForm({ mode, hideRole }: AuthFormProps) {
             onChange={e => setEmail(e.target.value)}
             placeholder="you@email.com"
             required
-            autoComplete="email"
+            autoComplete="username"
           />
         </div>
 
@@ -172,7 +167,8 @@ export default function AuthForm({ mode, hideRole }: AuthFormProps) {
             onChange={e => setPw(e.target.value)}
             placeholder="••••••••"
             required
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            autoComplete="current-password"
+            title={mode === 'login' ? 'Enter your password' : 'Create a password'}
           />
         </div>
 

@@ -66,8 +66,12 @@ export default function AnalyticsSection() {
           count,
         }));
         setCategoryStats(categoryStats);
-      } catch (err: any) {
-        setError(err.message || 'Error loading analytics');
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message || 'Error loading analytics');
+        } else {
+          setError('Error loading analytics');
+        }
       }
       setLoading(false);
     }
@@ -87,27 +91,27 @@ export default function AnalyticsSection() {
             <h3 className="text-sm font-semibold text-[#00441B]">Genre Success Rate</h3>
             <div className="mt-4 min-h-[260px]">
               {genreStats.length === 0 ? (
-                <div className="text-xs text-gray-500">No genre stats available.</div>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={genreStats}
-                      dataKey="percent"
-                      nameKey="genre"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ name, percent }) => `${name} ${(percent || 0).toFixed(0)}%`}
-                    >
-                      {genreStats.map((entry, idx) => (
-                        <Cell key={`cell-${idx}`} fill={['#14532d', '#22c55e', '#bbf7d0', '#4ade80', '#a7f3d0', '#16a34a'][idx % 6]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip formatter={(value: any) => `${value}%`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+                  <div className="text-xs text-gray-500">No genre stats available.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={genreStats}
+                        dataKey="percent"
+                        nameKey="genre"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${(percent ?? 0).toFixed(0)}%`}
+                      >
+                        {genreStats.map((entry, idx) => (
+                          <Cell key={`cell-${idx}`} fill={['#14532d', '#22c55e', '#bbf7d0', '#4ade80', '#a7f3d0', '#16a34a'][idx % 6]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value: number | undefined) => value !== undefined ? `${value}%` : ''} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
             </div>
           </div>
 

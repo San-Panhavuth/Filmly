@@ -1,10 +1,15 @@
 'use client';
 
-export default function TableSection({ analytics }: { analytics: any }) {
-	const topEvents = analytics?.topEvents || [];
-	const totalSubmissions = analytics?.totalSubmissions || 0;
-	const totalAwards = analytics?.totalAwardsGiven || 0;
-	const acceptanceRate = analytics?.acceptanceRate || 0;
+export default function TableSection({ analytics }: { analytics: unknown }) {
+	const getValue = (key: string, defaultValue: unknown = []) => {
+		if (analytics && typeof analytics === 'object' && analytics !== null && key in analytics) {
+			return (analytics as Record<string, unknown>)[key] ?? defaultValue;
+		}
+		return defaultValue;
+	};
+	const topEvents = getValue('topEvents') as unknown[];
+	const totalSubmissions = getValue('totalSubmissions', 0) as number;
+	const acceptanceRate = getValue('acceptanceRate', 0) as number;
 
 	return (
 		<section className="mb-6 bg-white rounded-xl shadow p-6">
@@ -22,22 +27,28 @@ export default function TableSection({ analytics }: { analytics: any }) {
 					</thead>
 					<tbody>
 						{topEvents.length > 0 ? (
-							topEvents.map((event: any) => (
-								<tr
-									key={event.id}
-									className="bg-white border-b last:border-b-0"
-								>
-									<td className="px-4 py-2 text-gray-900 whitespace-nowrap">
-										{event.title}
-									</td>
-									<td className="px-4 py-2 text-gray-900">
-										{event.submissionCount}
-									</td>
-									<td className="px-4 py-2 text-gray-900">
-										{event.deadline ? new Date(event.deadline).toLocaleDateString() : 'N/A'}
-									</td>
-								</tr>
-							))
+							topEvents.map((event) => {
+								if (event && typeof event === 'object' && event !== null) {
+									const e = event as { id?: string | number; title?: string; submissionCount?: number; deadline?: string };
+									return (
+										<tr
+											key={e.id}
+											className="bg-white border-b last:border-b-0"
+										>
+											<td className="px-4 py-2 text-gray-900 whitespace-nowrap">
+												{e.title}
+											</td>
+											<td className="px-4 py-2 text-gray-900">
+												{e.submissionCount}
+											</td>
+											<td className="px-4 py-2 text-gray-900">
+												{e.deadline ? new Date(e.deadline).toLocaleDateString() : 'N/A'}
+											</td>
+										</tr>
+									);
+								}
+								return null;
+							})
 						) : (
 							<tr>
 								<td colSpan={3} className="px-4 py-8 text-center text-gray-500">

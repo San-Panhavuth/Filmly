@@ -1,4 +1,6 @@
+"use client";
 import React, { useState } from 'react';
+import Image from 'next/image';
 
 // Define the type for the user prop for better type safety
 interface UserProfile {
@@ -23,7 +25,7 @@ export default function FilmmakerProfileView({ user }: { user: UserProfile }) {
         <div className="bg-white rounded-lg shadow p-8 max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
-              <img src="/image 10.svg" alt="Logo" style={{ height: 32 }} />
+              <Image src="/image 10.svg" alt="Logo" width={32} height={32} style={{ height: 32, width: 32 }} />
               <span className="text-lg font-semibold text-green-900">Welcome back, {user.name}!</span>
             </div>
             <button
@@ -103,12 +105,14 @@ export default function FilmmakerProfileView({ user }: { user: UserProfile }) {
           
           {/* --- Left Content: Image and Contact Info (Horizontal Layout) --- */}
           <div className="flex flex-col flex-shrink-0 w-80">
-            <img
-              src={PROFILE_IMAGE_PATH} 
+            <Image
+              src={PROFILE_IMAGE_PATH}
               alt="Profile"
-              // Adjusted size and styling to better match the new image
+              width={320}
+              height={192}
               className="w-full h-48 rounded-lg object-cover mb-4 border border-[#EDEDED] shadow-sm"
               style={{ objectPosition: 'center' }}
+              priority
             />
             
             {/* Contact Details */}

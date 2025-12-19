@@ -1,11 +1,23 @@
-'use client';
 
-import React, { useEffect, useState } from 'react';
+'use client';
 import FilmmakerProfileView from '@/view/films/profile/FilmmakerProfileView';
+
 import { getCurrentUser } from '@/api/authApi';
+import React, { useEffect, useState } from 'react';
+
+interface UserProfile {
+  name: string;
+  role: string;
+  gmail: string;
+  country: string;
+  contact: string;
+  social: string;
+  bio: string;
+  image: string;
+}
 
 export default function FilmmakerProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,8 +37,12 @@ export default function FilmmakerProfilePage() {
           bio: res.user.bio || '',
           image: '/profile-default.png',
         });
-      } catch (err: any) {
-        setError(err.message || 'Failed to load user');
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Failed to load user');
+        }
       }
       setLoading(false);
     };

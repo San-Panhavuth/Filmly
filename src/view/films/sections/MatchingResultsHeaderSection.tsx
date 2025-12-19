@@ -9,7 +9,6 @@ type Props = {
   selectedFilmId: string;
   selectedFilmTitle: string;
   onSelectChange: (id: string) => void;
-  boxHeight: string;
 };
 
 export default function MatchingResultsHeaderSection({
@@ -18,7 +17,6 @@ export default function MatchingResultsHeaderSection({
   selectedFilmId,
   selectedFilmTitle,
   onSelectChange,
-  boxHeight,
 }: Props) {
   return (
     <div>

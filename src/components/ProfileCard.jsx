@@ -1,15 +1,16 @@
 import React from "react";
+import Image from "next/image";
 
 export default function ProfileCard() {
   return (
     <div style={{ marginLeft: 320, marginTop: 40 }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
-        <img
+        <Image
           src="/profile-photo.jpg"
           alt="Profile"
+          width={80}
+          height={80}
           style={{
-            width: 80,
-            height: 80,
             borderRadius: "50%",
             objectFit: "cover",
             marginRight: 24,

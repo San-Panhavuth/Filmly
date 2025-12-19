@@ -17,8 +17,12 @@ export default function AuthTestPage() {
     try {
       const data = await authApi.getCurrentUser();
       setTestResult(JSON.stringify(data, null, 2));
-    } catch (error: any) {
-      setTestResult(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setTestResult(`Error: ${error.message}`);
+      } else {
+        setTestResult('Unknown error');
+      }
     }
     setTestLoading(false);
   };
@@ -28,8 +32,12 @@ export default function AuthTestPage() {
     try {
       await signOut();
       setTestResult('Logged out successfully');
-    } catch (error: any) {
-      setTestResult(`Logout error: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setTestResult(`Logout error: ${error.message}`);
+      } else {
+        setTestResult('Unknown error');
+      }
     }
     setTestLoading(false);
   };
