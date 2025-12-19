@@ -1,7 +1,5 @@
 'use client';
-
-import React, { useState } from 'react';
-
+import React from 'react';
 
 type FiltersProps = {
   statusFilter: string;
@@ -11,14 +9,20 @@ type FiltersProps = {
   total: number;
 };
 
-export default function SubmissionsFiltersSection(props: FiltersProps) {
+export default function SubmissionsFiltersSection({
+  statusFilter,
+  judgingFilter,
+  onStatusChange,
+  onJudgingChange,
+  total
+}: FiltersProps) {
   return (
     <section className="rounded-xl border border-[#EDEDED] bg-white px-4 py-4 shadow-sm md:px-6 md:py-5 w-full">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex flex-wrap items-center gap-3">
           <select
-            value={props.statusFilter}
-            onChange={(e) => props.onStatusChange(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => onStatusChange(e.target.value)}
             className="rounded-md border px-3 py-2 text-sm bg-white min-w-[180px]"
             aria-label="Submission Status"
           >
@@ -28,8 +32,8 @@ export default function SubmissionsFiltersSection(props: FiltersProps) {
           </select>
 
           <select
-            value={props.judgingFilter}
-            onChange={(e) => props.onJudgingChange(e.target.value)}
+            value={judgingFilter}
+            onChange={(e) => onJudgingChange(e.target.value)}
             className="rounded-md border px-3 py-2 text-sm bg-white min-w-[180px]"
             aria-label="Judging Status"
           >
@@ -41,7 +45,9 @@ export default function SubmissionsFiltersSection(props: FiltersProps) {
           </select>
         </div>
 
-        <div className="mt-2 md:mt-0 md:ml-auto text-sm text-[#6F6F6F]">Total: {props.total}</div>
+        <div className="mt-2 md:mt-0 md:ml-auto text-sm text-[#6F6F6F]">
+          Total: {total}
+        </div>
       </div>
     </section>
   );
