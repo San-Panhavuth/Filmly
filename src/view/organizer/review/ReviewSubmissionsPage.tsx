@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FiFilm, FiAward, FiX, FiTrash2 } from 'react-icons/fi';
 import { getMyEvents, getEventSubmissions, updateSubmissionStatus, assignWinner, getFilmCrew, getEventWinners, deleteWinner } from '@/api/organizerApi';
+import { getUserProfileById } from '@/api/userApi';
 
 const statusColors = {
   'under_review': 'bg-blue-500 text-white',
@@ -143,6 +144,10 @@ export default function ReviewSubmissionsPage() {
       }
       
       console.log('[ReviewSubmissions] All Submissions:', allSubmissions);
+      // Log the first submission's filmOwner for debugging
+      if (allSubmissions.length > 0) {
+        console.log('[ReviewSubmissions] First submission filmOwner:', allSubmissions[0].filmOwner);
+      }
       console.log('[ReviewSubmissions] All Winners:', allWinnersData);
       
       // Map winners to submissions by eventFilmSubmissionId
@@ -162,12 +167,29 @@ export default function ReviewSubmissionsPage() {
         });
       }
       
-      // Add awards to each submission
-      const submissionsWithAwards = allSubmissions.map((submission: any) => ({
-        ...submission,
-        awards: winnersMap.get(submission.id) || [],
-      }));
-      
+      // Add awards to each submission, and fetch email if missing
+      const submissionsWithAwards = await Promise.all(
+        allSubmissions.map(async (submission: any) => {
+          let email = submission.filmOwner?.email || null;
+          if (!email && submission.filmOwner?.id) {
+            try {
+              const profile = await getUserProfileById(submission.filmOwner.id);
+              email = profile?.email || 'N/A';
+            } catch (e) {
+              console.warn('[ReviewSubmissions] Could not fetch email for filmOwner:', submission.filmOwner, e);
+              email = 'N/A';
+            }
+          }
+          return {
+            ...submission,
+            awards: winnersMap.get(submission.id) || [],
+            filmOwner: {
+              ...submission.filmOwner,
+              email,
+            },
+          };
+        })
+      );
       console.log('[ReviewSubmissions] Submissions with awards:', submissionsWithAwards);
       setSubmissions(submissionsWithAwards);
     } catch (err: any) {
@@ -346,6 +368,7 @@ export default function ReviewSubmissionsPage() {
         <table className="min-w-full text-left border-separate border-spacing-y-2">
           <thead>
             <tr className="text-gray-500 text-sm">
+              <th className="px-4 py-2 font-semibold">Email</th>
               <th className="px-4 py-2 font-semibold">Film</th>
               <th className="px-4 py-2 font-semibold">Filmmaker</th>
               <th className="px-4 py-2 font-semibold">Genre</th>
@@ -359,6 +382,9 @@ export default function ReviewSubmissionsPage() {
             {!loading && paged.length > 0 ? (
               paged.map((s) => (
                 <tr key={s.id} className="bg-white border-b last:border-b-0">
+                  <td className="px-4 py-2 text-gray-900 whitespace-nowrap">
+                    {s.filmOwner?.email || 'N/A'}
+                  </td>
                   <td className="px-4 py-2 text-gray-900 whitespace-nowrap flex items-center gap-2">
                     <span className="inline-flex items-center justify-center bg-green-100 rounded p-1">
                       <FiFilm className="text-green-900 text-lg" />

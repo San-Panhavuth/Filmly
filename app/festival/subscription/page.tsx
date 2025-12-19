@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 
 type Film = {
@@ -9,7 +10,7 @@ type Film = {
   duration?: number;
 };
 
-export default function FilmsListPage() {
+export function FilmsListPage() {
   const [films, setFilms] = useState<Film[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,6 +63,7 @@ export default function FilmsListPage() {
     </div>
   );
 }
+
 export default function Subscription() {
   return <div>Subscription Screen</div>;
 }
