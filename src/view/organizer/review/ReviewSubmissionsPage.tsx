@@ -150,11 +150,16 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
             getEventSubmissions(festival.id),
             getEventWinners(festival.id)
           ]);
-          return { submissionsResponse, winnersResponse };
+          return { submissionsResponse, winnersResponse, eventId: festival.id };
         });
         const results = await Promise.all(allPromises);
-        results.forEach(({ submissionsResponse, winnersResponse }) => {
-          allSubmissions = allSubmissions.concat((submissionsResponse.submissions || []) as Submission[]);
+        results.forEach(({ submissionsResponse, winnersResponse, eventId }) => {
+          // Add event_id to each submission
+          const submissionsWithEventId = (submissionsResponse.submissions || []).map((sub: Submission) => ({
+            ...sub,
+            event_id: eventId
+          }));
+          allSubmissions = allSubmissions.concat(submissionsWithEventId);
           allWinnersData = allWinnersData.concat(winnersResponse.winners || []);
         });
       } else {
@@ -164,7 +169,11 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
           getEventSubmissions(eventId),
           getEventWinners(eventId)
         ]);
-        allSubmissions = (submissionsResponse.submissions || []) as Submission[];
+        // Add event_id to each submission
+        allSubmissions = (submissionsResponse.submissions || []).map((sub: Submission) => ({
+          ...sub,
+          event_id: eventId
+        }));
         allWinnersData = winnersResponse.winners || [];
       }
       console.log('[ReviewSubmissions] All Submissions:', allSubmissions);
@@ -261,7 +270,7 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
   const handleAwardChange = async (value: string) => {
     setSelectedAward(value);
     setSelectedCrewId(null);
-    
+
     // Check if this award requires crew selection
     const awardInfo = allAwards.find(a => a.value === value);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,7 +341,7 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
     if (event) {
       event.stopPropagation();
     }
-    
+
     if (!confirm('Are you sure you want to remove this award?')) {
       return;
     }
@@ -446,9 +455,8 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
                   </td>
                   <td className="px-4 py-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ${
-                        statusColors[s.submissionStatus as keyof typeof statusColors] || 'bg-gray-400 text-white'
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ${statusColors[s.submissionStatus as keyof typeof statusColors] || 'bg-gray-400 text-white'
+                        }`}
                       onClick={() => {
                         setModal(s);
                         setStatus(s.submissionStatus || 'submitted');
@@ -522,11 +530,10 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
           <button
-            className={`px-4 py-2 rounded border font-semibold ${
-              page === 1
+            className={`px-4 py-2 rounded border font-semibold ${page === 1
                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                 : 'bg-white text-green-900 border-gray-300'
-            }`}
+              }`}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
@@ -536,11 +543,10 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
             Page {page} of {totalPages}
           </span>
           <button
-            className={`px-4 py-2 rounded border font-semibold ${
-              page === totalPages
+            className={`px-4 py-2 rounded border font-semibold ${page === totalPages
                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                 : 'bg-white text-green-900 border-gray-300'
-            }`}
+              }`}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
           >
@@ -593,9 +599,8 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
                   <button
                     key={btn.value}
                     type="button"
-                    className={`px-3 py-1 rounded font-semibold text-xs focus:outline-none ${btn.color} ${
-                      status === btn.value ? 'ring-2 ring-green-900' : ''
-                    }`}
+                    className={`px-3 py-1 rounded font-semibold text-xs focus:outline-none ${btn.color} ${status === btn.value ? 'ring-2 ring-green-900' : ''
+                      }`}
                     onClick={() => setStatus(btn.value)}
                   >
                     {btn.label.replace('_', ' ')}
@@ -619,7 +624,7 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
             <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700" onClick={() => setAwardModal(null)} title="Close"><FiX size={20} /></button>
             <h2 className="text-xl font-bold text-green-900 mb-1">Assign Award</h2>
             <p className="text-gray-500 mb-6">Assign an award to <span className="font-semibold text-gray-900">{awardModal.film?.title || 'this film'}</span></p>
-            
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Award Category</label>
               <select
