@@ -40,7 +40,7 @@ interface Submission {
   submissionStatus?: string;
   awards?: Winner[];
   film?: Film;
-  film_id?: number;
+  filmId?: number;
   title?: string;
   event_id?: number;
   judgingStatus?: string;
@@ -122,6 +122,10 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Film detail modal state
+  const [filmDetailModal, setFilmDetailModal] = useState<any>(null);
+  const [loadingFilmDetail, setLoadingFilmDetail] = useState(false);
 
   // Fetch festivals
   const fetchFestivals = async () => {
@@ -356,6 +360,59 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
     }
   };
 
+  const handleFilmClick = async (filmId: number) => {
+    console.log('[handleFilmClick] Clicked film ID:', filmId);
+    setLoadingFilmDetail(true);
+    setFilmDetailModal({ loading: true });
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      console.log('[handleFilmClick] API URL:', apiUrl);
+
+      // Fetch film details
+      const filmUrl = `${apiUrl}/api/films/${filmId}`;
+      console.log('[handleFilmClick] Fetching film from:', filmUrl);
+      const filmResponse = await fetch(filmUrl);
+      console.log('[handleFilmClick] Film response status:', filmResponse.status);
+
+      if (!filmResponse.ok) {
+        const errorText = await filmResponse.text();
+        console.error('[handleFilmClick] Film fetch error:', errorText);
+        throw new Error('Failed to fetch film');
+      }
+      const filmData = await filmResponse.json();
+      console.log('[handleFilmClick] Film data:', filmData);
+
+      // Fetch crew members
+      const crewUrl = `${apiUrl}/api/films/${filmId}/crew`;
+      console.log('[handleFilmClick] Fetching crew from:', crewUrl);
+      const crewResponse = await fetch(crewUrl);
+      const crewData = crewResponse.ok ? await crewResponse.json() : { crew: [] };
+      console.log('[handleFilmClick] Crew data:', crewData);
+
+      // Fetch documents
+      const docsUrl = `${apiUrl}/api/films/${filmId}/documents`;
+      console.log('[handleFilmClick] Fetching documents from:', docsUrl);
+      const docsResponse = await fetch(docsUrl);
+      const docsData = docsResponse.ok ? await docsResponse.json() : { documents: [] };
+      console.log('[handleFilmClick] Documents data:', docsData);
+
+      setFilmDetailModal({
+        ...filmData.film,
+        crew: crewData.crew || [],
+        documents: docsData.documents || [],
+        loading: false,
+      });
+    } catch (err) {
+      console.error('Error fetching film details:', err);
+      alert('Failed to load film details: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setFilmDetailModal(null);
+    } finally {
+      setLoadingFilmDetail(false);
+    }
+  };
+
+
   // Filter and paginate submissions
   const filteredSubmissions = selectedStatusFilter === 'All Status'
     ? submissions
@@ -442,7 +499,12 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
                     <span className="inline-flex items-center justify-center bg-green-100 rounded p-1">
                       <FiFilm className="text-green-900 text-lg" />
                     </span>
-                    <span>{s.film?.title || 'Untitled'}</span>
+                    <button
+                      onClick={() => s.filmId && handleFilmClick(s.filmId)}
+                      className="text-green-900 hover:text-green-700 hover:underline font-medium transition-colors"
+                    >
+                      {s.film?.title || 'Untitled'}
+                    </button>
                   </td>
                   <td className="px-4 py-2 text-gray-900 whitespace-nowrap">
                     {s.filmOwner?.username || 'Unknown'}
@@ -531,8 +593,8 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
         <div className="flex justify-center mt-6 gap-2">
           <button
             className={`px-4 py-2 rounded border font-semibold ${page === 1
-                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                : 'bg-white text-green-900 border-gray-300'
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-white text-green-900 border-gray-300'
               }`}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
@@ -544,8 +606,8 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
           </span>
           <button
             className={`px-4 py-2 rounded border font-semibold ${page === totalPages
-                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                : 'bg-white text-green-900 border-gray-300'
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-white text-green-900 border-gray-300'
               }`}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
@@ -696,6 +758,128 @@ export default function ReviewSubmissionsPage(): React.ReactElement {
                 Assign Award
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Film Detail Modal */}
+      {filmDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl relative my-8 animate-fade-in">
+            <button
+              className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-700 bg-white rounded-full p-2 shadow-lg"
+              onClick={() => setFilmDetailModal(null)}
+              title="Close"
+            >
+              <FiX size={24} />
+            </button>
+
+            {filmDetailModal.loading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-900"></div>
+              </div>
+            ) : (
+              <div className="max-h-[90vh] overflow-y-auto">
+                {/* Video Player Section */}
+                {filmDetailModal.s3Link && (
+                  <div className="bg-black rounded-t-xl">
+                    <video
+                      controls
+                      className="w-full max-h-[500px] rounded-t-xl"
+                      crossOrigin="anonymous"
+                    >
+                      <source src={filmDetailModal.s3Link} type="video/mp4" />
+                      {filmDetailModal.subtitleFile && (
+                        <track
+                          kind="subtitles"
+                          src={filmDetailModal.subtitleFile}
+                          srcLang="en"
+                          label="English"
+                        />
+                      )}
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
+
+                <div className="p-8">
+                  {/* Film Title and Basic Info */}
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold text-green-900 mb-2">{filmDetailModal.title}</h2>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Duration:</span>
+                        <span>{filmDetailModal.duration ? `${filmDetailModal.duration} min` : 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Language:</span>
+                        <span>{filmDetailModal.language || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Genre:</span>
+                        <span>{Array.isArray(filmDetailModal.genre) ? filmDetailModal.genre.join(', ') : 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {filmDetailModal.description && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+                      <p className="text-gray-700 leading-relaxed">{filmDetailModal.description}</p>
+                    </div>
+                  )}
+
+                  {/* Crew Members */}
+                  {filmDetailModal.crew && filmDetailModal.crew.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Crew Members</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {filmDetailModal.crew.map((member: any) => (
+                          <div key={member.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <div className="font-medium text-gray-900">{member.crewName}</div>
+                            <div className="text-sm text-gray-600">{member.crewRole}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Documents */}
+                  {filmDetailModal.documents && filmDetailModal.documents.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Documents</h3>
+                      <div className="space-y-2">
+                        {filmDetailModal.documents.map((doc: any) => (
+                          <a
+                            key={doc.id}
+                            href={doc.documentFile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                          >
+                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-sm text-gray-700 flex-1">Document {doc.id}</span>
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Video Message */}
+                  {!filmDetailModal.s3Link && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                      <p className="text-yellow-800">No video file has been uploaded for this film yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
